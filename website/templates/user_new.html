@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Create New User{% endblock %}
+
+{% block content %}
+
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </div>
+    <h1>Welcome back {{user.first_name}} {{user.last_name}}!</h1>
+</div>
+
+<h1>Create New User</h1>
+<div class="one-col-dash">
+    <form action="{{ url_for('main.new_user') }}" method="POST">
+
+        <div class="input-box" style="width: 100%; padding-top: 1rem;">
+            <input type="text" required="required" id="colby_id" name="colby_id" >
+            <span>Colby ID</span>
+        </div>
+
+        <div class="input-box" style="width: 100%; padding-top: 1rem;">
+            <input type="text" required="required" id="first_name" name="first_name" >
+            <span>Name(s)</span>
+        </div>
+
+        <div class="input-box" style="width: 100%; padding-top: 1rem;">
+            <input type="text" required="required" id="last_name" name="last_name">
+            <span>Last Name</span>
+        </div>
+
+        <div class="input-box" style="width: 100%; padding-top: 1rem;">
+            <input type="email" required="required" id="email" name="email">
+            <span>Email</span>
+        </div>                    
+
+        <div class="">
+            <h3>User Type:</h3>
+            <select id="type" style="cursor: pointer;" name="type" onchange="toggleOptions()">
+                <option value="athlete">Athlete</option>
+                <option value="coach">Coach</option>
+                <option value="peak">PEAK</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <!-- Team Selection for Athlete -->
+        <div class="input-box" style="width: 100%; padding-top: 1rem;">
+            <select id="team" name="team">
+                <option value="">Select Team</option>
+                {% for team in teams %}
+                    <option value="{{ team.id }}">{{ team.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Additional options for Athlete -->
+        <div id="athleteOptions">
+
+            <div class="input-box" style="width: 100%; padding-top: 1rem;">
+                <input type="text"  id="gender" name="gender">
+                <span>Gender</span>
+            </div>
+            
+            <div class="input-box" style="width: 100%; padding-top: 1rem;">
+                <input type="text"  id="class_year" name="class_year">
+                <span>Class Year</span>
+            </div>
+        </div>
+
+        <div class="btn-cluster-ind">
+            <button type="submit" class="btn" style="width: 100%;"><h2>New User</h2></button>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleOptions() {
+        var typeSelect = document.getElementById("type");
+        var athleteOptions = document.getElementById("athleteOptions");
+
+        if (typeSelect.value === "athlete") {
+            athleteOptions.style.display = "block";
+        } else {
+            athleteOptions.style.display = "none";
+        }
+    }
+
+        window.onload = function () {
+            setTimeout(function () {
+                var flashMsg = document.getElementById('flash-messages');
+                if (flashMsg) {
+                flashMsg.style.display = 'none';
+                }
+            }, 5000);  // 5000ms = 5s
+        };
+</script>
+{% endblock %}

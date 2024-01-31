@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ team.name }} Dashboard{% endblock %}
+
+{% block content %}
+<div>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div id="flash-messages" class="flash-messages"> 
+            {% for message in messages %}
+                <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+</div>
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </div>
+    <h1>{{team.name}} Dashboard</h1>
+</div>
+
+<div class="date">
+    <input type="date">
+</div>
+
+{% if current_user.type in ['admin', 'peak'] %}
+<div class="btn-cluster">
+    <a class="btn" href="{{ url_for('main.new_note') }}">
+        <h2> New Note</h2>
+    </a>
+    <a class="btn" href="{{ url_for('main.notes_dashboard') }}">
+        <h2> Notes Dashboard</h2>
+    </a>
+</div>
+{% endif %}
+
+<div class="insights">
+    <div class="metric">
+        <span> METRIC</span>
+        <div class="middle">
+            <div class="left">
+                <h3>Metric data</h3>
+                <h1>1m</h1>
+            </div>
+            <div class="progress">
+                <svg>
+                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
+                </svg>
+                <div class="number">
+                    <p> 75%</p>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Some text</small>
+    </div>
+    <!-- --------------- End of Metric -------------- -->
+
+
+    <div class="metric">
+        <span> METRIC</span>
+        <div class="middle">
+            <div class="left">
+                <h3>Metric data</h3>
+                <h1>1m</h1>
+            </div>
+            <div class="progress">
+                <svg>
+                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
+                </svg>
+                <div class="number">
+                    <p> 75%</p>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Some text</small>
+    </div>
+    <!-- --------------- End of Metric -------------- -->
+
+
+    <div class="metric">
+        <span> METRIC</span>
+        <div class="middle">
+            <div class="left">
+                <h3>Metric data</h3>
+                <h1>1m</h1>
+            </div>
+            <div class="progress">
+                <svg>
+                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
+                </svg>
+                <div class="number">
+                    <p> 75%</p>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Some text</small>
+    </div>
+    <!-- --------------- End of Metric -------------- -->
+
+
+    <div class="metric">
+        <span> METRIC</span>
+        <div class="middle">
+            <div class="left">
+                <h3>Metric data</h3>
+                <h1>1m</h1>
+            </div>
+            <div class="progress">
+                <svg>
+                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
+                </svg>
+                <div class="number">
+                    <p> 75%</p>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Some text</small>
+    </div>
+    <!-- --------------- End of Metric -------------- -->
+</div>
+<!-- --------------- End of Insights -------------- -->
+
+<div class="athletes">
+    <h2> Athletes in the Team</h2>
+    <table>
+        <!-- head of table -->
+        <thead>
+            <tr>
+                <th >Athlete Name</th>
+                <th>Position</th>
+                <th>Status</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+
+        <!-- table body -->
+        <tbody>
+            {% for athlete in athletes %}
+
+            <tr>
+                <td>
+                    <a href="/athlete/{{ athlete.id }}">
+                        {{ athlete.first_name }} {{ athlete.last_name }}
+                    </a>
+                </td>
+                <td>
+                    <select style="cursor: pointer;" id="positionSelect{{ athlete.id }}" onchange="updatePosition({{ athlete.id }})">
+                        <option value="Forward" {% if athlete.position == "Forward" %}selected{% endif %}>Forward</option>
+                        <option value="Winger" {% if athlete.position == "Winger" %}selected{% endif %}>Winger</option>
+                        <option value="Midfilder" {% if athlete.position == "Midfilder" %}selected{% endif %}>Midfilder</option>
+                        <option value="Defender" {% if athlete.position == "Defender" %}selected{% endif %}>Defender</option>
+                        <option value="GoalKeaper" {% if athlete.position == "GoalKeaper" %}selected{% endif %}>GoalKeaper</option>
+                        <option value="Battery" {% if athlete.position == "Battery" %}selected{% endif %}>Battery</option>
+                        <option value="Infield" {% if athlete.position == "Infield" %}selected{% endif %}>Infield</option>
+                        <option value="Outfield" {% if athlete.position == "Outfield" %}selected{% endif %}>Outfield</option>
+                        <option value="Rower" {% if athlete.position == "Rower" %}selected{% endif %}>Rower</option>
+                        <option value="Coxswain" {% if athlete.position == "Coxswain" %}selected{% endif %}>Coxswain</option>
+                        <option value="Other" {% if athlete.position == "Other" %}selected{% endif %}>Other</option>
+                    </select>
+                </td>
+                <td>
+                    {% if athlete.status == 0 %}
+                    <p class="card-text" style="color: var(--color-success);">Clear</p>
+                    {% elif athlete.status == 1 %}
+                    <p class="card-text" style="color: var(--color-warning);">Warning</p>
+                    {% else %}
+                    <p class="card-text" style="color: var(--color-danger);">Not Clear</p>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if athlete.received_notes %}
+                    {{ athlete.received_notes[-1].text if athlete.received_notes[-1].visible else "No visible notes" }}
+                    {% else %}
+                    No notes received
+                    {% endif %}
+                </td> 
+
+            </tr>
+            
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- --------------- End of Athletes -------------- -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    //function to update athletes position
+    function updatePosition(athleteId) {
+            var selectElement = document.getElementById("positionSelect" + athleteId);
+            var position = selectElement.value;
+
+            // Send AJAX request to update athlete position
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/update_position/" + athleteId, true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                alert("Position updated successfully");
+                } else {
+                alert("Failed to update position");
+                }
+            }
+            };
+
+            var data = JSON.stringify({ position: position });
+            xhr.send(data);
+        }
+</script>
+{% endblock %}

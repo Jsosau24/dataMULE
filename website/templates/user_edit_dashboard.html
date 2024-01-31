@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}User Selection Dashboard{% endblock %}
+
+{% block content %}
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </div>
+    <h1>Select an user to edit its information!</h1>
+</div>
+
+<div class="one-col-dash">
+    <div class="input-cluster" style="width: 100%;">
+        <div class="input-box" style="width: 100%;">
+            <input type="text" required="required" onkeyup="filterList(this, document.getElementById('teamList'))">
+            <span>Lookup an Athlete</span>
+        </div>
+    </div>
+
+    <ul class="list-group" id="teamList" >
+        {% for user in users %}
+            <a href="/user/edit/{{ user.id }}">
+                <li class="list-group-item" >{{ user.first_name }} {{ user.last_name }}</li>
+            </a>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterList(inputElement, listElement) {
+            let filter = inputElement.value.toUpperCase();
+            let li = listElement.getElementsByTagName('li');
+            
+            // Loop through all list items, and hide those who don't match the search query
+            for (let i = 0; i < li.length; i++) {
+                let text = li[i].textContent || li[i].innerText;
+                li[i].style.display = (text.toUpperCase().indexOf(filter) > -1) ? "" : "none";
+            }
+        }
+</script>
+{% endblock %}

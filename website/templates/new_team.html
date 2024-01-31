@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}New Team{% endblock %}
+
+{% block content %}
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </div>
+</div>
+
+<form action="{{ url_for('main.create_team') }}" method="POST">
+    <div class="input-box" style="width: 98%;">
+        <input type="text" name="team_name" required>
+        <span>Team Name</span>
+    </div>
+
+    <div class="btn-cluster-ind">
+        <button type="submit" class="btn">Create Team</button>
+    </div>
+
+    <div class="three-col-dash">
+        <!-- Sections for Athletes -->
+        <div style="width: 100%;">
+            <div class="input-cluster" style="width: 100%;">
+                <div class="input-box" style="width: 100%;">
+                    <input type="text" onkeyup="filterList(this, document.getElementById('athleteList'))">
+                    <span>Lookup an Athlete</span>
+                </div>
+            </div>
+
+            <ul class="list-group" id="athleteList">
+                {% for athlete in athletes %}
+                <li class="list-group-item">
+                    <input type="checkbox" name="athlete_ids" value="{{ athlete.id }}" id="athleteCheckbox{{ athlete.id }}" onclick="handleCheckboxClick(this)">
+                    <label for="athleteCheckbox{{ athlete.id }}">{{ athlete.first_name }} {{ athlete.last_name }}</label>
+                </li>
+                {% endfor %}
+            </ul>            
+        </div>
+
+        <!-- Section for Coaches -->
+        <div style="width: 100%;">
+            <div class="input-cluster" style="width: 100%;">
+                <div class="input-box" style="width: 100%;">
+                    <input type="text" onkeyup="filterList(this, document.getElementById('coachList'))">
+                    <span>Lookup a Coach</span>
+                </div>
+            </div>
+
+            <ul class="list-group" id="coachList">
+                {% for coach in coaches %}
+                <li class="list-group-item">
+                    <input type="checkbox" name="coach_ids" value="{{ coach.id }}" id="coachCheckbox{{ coach.id }}" onclick="handleCheckboxClick(this)">
+                    <label for="coachCheckbox{{ coach.id }}">{{ coach.first_name }} {{ coach.last_name }}</label>
+                </li>
+                {% endfor %}
+            </ul>            
+        </div>
+
+        <!-- Section for PEAK Users -->
+        <div style="width: 100%;">
+            <div class="input-cluster" style="width: 100%;">
+                <div class="input-box" style="width: 100%;">
+                    <input type="text" onkeyup="filterList(this, document.getElementById('peakList'))" onclick="handleCheckboxClick(this)">
+                    <span>Lookup a PEAK User</span>
+                </div>
+            </div>
+
+            <ul class="list-group" id="peakList">
+                {% for peak in peaks %}
+                <li class="list-group-item">
+                    <input type="checkbox" name="peak_ids" value="{{ peak.id }}" id="peakCheckbox{{ peak.id }}"onclick="handleCheckboxClick(this)">
+                    <label for="peakCheckbox{{ peak.id }}">{{ peak.first_name }} {{ peak.last_name }}</label>
+                </li>
+                {% endfor %}
+            </ul>            
+        </div>
+    </div>
+</form>   
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all checkboxes in the list
+    var checkboxes = document.querySelectorAll('.list-group input[type="checkbox"]');
+
+    // Loop through each checkbox and set its initial state
+    checkboxes.forEach(function(checkbox) {
+        handleCheckboxClick(checkbox);
+    });
+});
+
+function handleCheckboxClick(checkboxElement) {
+    // Get the parent list item of the checkbox
+    var listItem = checkboxElement.parentNode;
+
+    // Check if the checkbox is checked and toggle the 'active' class accordingly
+    if (checkboxElement.checked) {
+        listItem.classList.add('active');
+    } else {
+        listItem.classList.remove('active');
+    }
+}
+
+
+function toggleActiveClass(element) {
+    // Add or remove 'active' class based on checkbox state
+    if (element.querySelector('input[type="checkbox"]').checked) {
+        element.classList.add('active');
+    } else {
+        element.classList.remove('active');
+    }
+}
+
+// JavaScript functions for filtering lists
+function filterList(inputElement, listElement) {
+    let filter = inputElement.value.toUpperCase();
+    let li = listElement.getElementsByTagName('li');
+
+    for (let i = 0; i < li.length; i++) {
+        let label = li[i].getElementsByTagName('label')[0];
+        let txtValue = label.textContent || label.innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            li[i].style.display = "";
+        } else {
+            li[i].style.display = "none";
+        }
+    }
+} 
+</script>
+{% endblock %}

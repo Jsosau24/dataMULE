@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit {{ team.name }}{% endblock %}
+
+{% block content %}
+
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </div>
+    <h1>Edit {{team.name}},</h1>
+</div>
+
+<div class="btn-cluster-ind">
+    <button type="button" class="btn" onclick="confirmDeleteTeam({{ team.id }})">Delete Team</button>
+</div>
+
+<div class="three-col-dash">
+
+    <div style="width: 100%;">
+        <div class="input-cluster" style="width: 100%;">
+            <div class="input-box" style="width: 100%;">
+                <input type="text" onkeyup="filterList(this, document.getElementById('athleteList'))">
+                <span>Lookup an Athlete</span>
+            </div>
+        </div>
+
+        <!-- Athlete List -->
+        <ul class="list-group" id="athleteList">
+            {% for athlete in athletes %}
+            <li class="list-group-item {% if has_athlete(team, athlete) %}active{% endif %}">
+                <input type="checkbox" id="athleteCheckbox{{ athlete.id }}" {% if has_athlete(team, athlete) %}checked{% endif %}
+                onclick="toggleTeam({{ team.id }}, {{ athlete.id }}, this.checked, 'athlete')">
+                <label for="athleteCheckbox{{ athlete.id }}">{{ athlete.first_name }} {{ athlete.last_name }}</label>
+            </li>
+            {% endfor %}
+        </ul>            
+    </div>
+
+    <div style="width: 100%;">
+        <div class="input-cluster" style="width: 100%;">
+            <div class="input-box" style="width: 100%;">
+                <input type="text" onkeyup="filterList(this, document.getElementById('coachList'))">
+                <span>Lookup a Coach</span>
+            </div>
+        </div>
+
+        <!-- Coach List -->
+        <ul class="list-group" id="coachList">
+            {% for coach in coaches %}
+            <li class="list-group-item {% if has_coach(team, coach) %}active{% endif %}">
+                <input type="checkbox" id="coachCheckbox{{ coach.id }}" {% if has_coach(team, coach) %}checked{% endif %}
+                onclick="toggleTeam({{ team.id }}, {{ coach.id }}, this.checked, 'coach')">
+                <label for="coachCheckbox{{ coach.id }}">{{ coach.first_name }} {{ coach.last_name }}</label>
+            </li>
+            {% endfor %}
+        </ul>            
+    </div>
+
+    <div style="width: 100%;">
+        <div class="input-cluster" style="width: 100%;">
+            <div class="input-box" style="width: 100%;">
+                <input type="text" onkeyup="filterList(this, document.getElementById('peakList'))">
+                <span>Lookup a Peak</span>
+            </div>
+        </div>
+
+        <!-- Peak User List -->
+        <ul class="list-group" id="peakList">
+            {% for peak in peaks %}
+            <li class="list-group-item {% if has_peak(team, peak) %}active{% endif %}">
+                <input type="checkbox" id="peakCheckbox{{ peak.id }}" {% if has_peak(team, peak) %}checked{% endif %}
+                onclick="toggleTeam({{ team.id }}, {{ peak.id }}, this.checked, 'peak')">
+                <label for="peakCheckbox{{ peak.id }}">{{ peak.first_name }} {{ peak.last_name }}</label>
+            </li>
+            {% endfor %}
+        </ul>            
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterList(inputElement, listElement) {
+        let filter = inputElement.value.toUpperCase();
+        let li = listElement.getElementsByTagName('li');
+
+        for (let i = 0; i < li.length; i++) {
+            let label = li[i].getElementsByTagName('label')[0];
+            let txtValue = label.textContent || label.innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                li[i].style.display = "";
+            } else {
+                li[i].style.display = "none";
+            }
+        }
+    } 
+
+    function toggleActive(element) {
+        // Get all list items in the same list as the clicked item
+        var items = element.parentNode.getElementsByTagName('li');
+
+        // Remove the active class from all items and uncheck their checkboxes
+        for (var i = 0; i < items.length; i++) {
+            items[i].classList.remove('active');
+            items[i].getElementsByTagName('input')[0].checked = false;
+        }
+
+        // Add the active class to the clicked item and check its checkbox
+        element.classList.add('active');
+        element.getElementsByTagName('input')[0].checked = true;
+    }
+
+    function toggleActiveClass(element) {
+        // Remove 'active' class from all items in the same list
+        var items = element.parentNode.getElementsByClassName('list-group-item');
+        for (var i = 0; i < items.length; i++) {
+            items[i].classList.remove('active');
+        }
+        
+        // Add 'active' class to the clicked item
+        element.classList.add('active');
+    }
+
+    function toggleTeam(teamId, userId) {
+    var checkbox = document.getElementById("athleteCheckbox" + userId);
+    var listItem = checkbox.parentNode;  // assuming the checkbox is a direct child of the list item
+    var membership = checkbox.checked;
+
+    // Send AJAX request to update team
+    var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/update_team/" + teamId + "/" + userId, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    // Add 'active' class if user is added to team, remove it otherwise
+                    if (membership) {
+                        listItem.classList.add('active');
+                    } else {
+                        listItem.classList.remove('active');
+                    }
+                } else {
+                    alert("Failed to update team");
+                }
+            }
+        };
+
+        var data = JSON.stringify({ membership: membership });
+        xhr.send(data);
+    }
+
+    function toggleTeam(teamId, userId, isMember, userType) {
+        var checkboxId = `${userType}Checkbox${userId}`;
+        var checkbox = document.getElementById(checkboxId);
+        var listItem = checkbox.parentNode;
+
+        fetch('/update_team/' + teamId + '/' + userId, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({membership: isMember})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (isMember) {
+                    listItem.classList.add('active');
+                } else {
+                    listItem.classList.remove('active');
+                }
+            } else {
+                alert("Failed to update team membership");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+
+    function confirmDeleteTeam(teamId) {
+        if (confirm('Are you sure you want to delete this team?')) {
+            fetch('/delete_team/' + teamId, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/';  // Redirect after deletion
+                } else {
+                    alert("Failed to delete team");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+</script>
+
+{% endblock %}

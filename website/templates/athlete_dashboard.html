@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Athlete Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </div>
+    <h1>Dashboard {{athlete.first_name}} {{athlete.last_name}}</h1>
+</div>
+
+<div class="date">
+    <input type="date">
+</div>
+
+<div class="insights">
+    <div class="metric">
+        <span> METRIC</span>
+        <div class="middle">
+            <div class="left">
+                <h3>Metric data</h3>
+                <h1>1m</h1>
+            </div>
+            <div class="progress">
+                <svg>
+                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
+                </svg>
+                <div class="number">
+                    <p> 75%</p>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Some text</small>
+    </div>
+    <!-- --------------- End of Metric -------------- -->
+
+
+    <div class="metric">
+        <span> METRIC</span>
+        <div class="middle">
+            <div class="left">
+                <h3>Metric data</h3>
+                <h1>1m</h1>
+            </div>
+            <div class="progress">
+                <svg>
+                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
+                </svg>
+                <div class="number">
+                    <p> 75%</p>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Some text</small>
+    </div>
+    <!-- --------------- End of Metric -------------- -->
+
+
+    <div class="metric">
+        <span> METRIC</span>
+        <div class="middle">
+            <div class="left">
+                <h3>Metric data</h3>
+                <h1>1m</h1>
+            </div>
+            <div class="progress">
+                <svg>
+                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
+                </svg>
+                <div class="number">
+                    <p> 75%</p>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Some text</small>
+    </div>
+    <!-- --------------- End of Metric -------------- -->
+
+
+    <div class="metric">
+        <span> METRIC</span>
+        <div class="middle">
+            <div class="left">
+                <h3>Metric data</h3>
+                <h1>1m</h1>
+            </div>
+            <div class="progress">
+                <svg>
+                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
+                </svg>
+                <div class="number">
+                    <p> 75%</p>
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Some text</small>
+    </div>
+    <!-- --------------- End of Metric -------------- -->
+</div>
+<!-- --------------- End of Insights -------------- -->
+
+<div class="athletes">
+    <h2> Personal Notes</h2>
+    <table>
+        <!-- table body -->
+        <tbody>
+            {% for note in notes %}
+            <tr>
+                <td>{{ note.text }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- --------------- End of Athletes -------------- -->
+
+{% endblock %}

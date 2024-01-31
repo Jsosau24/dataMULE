@@ -1,0 +1,76 @@
+/*----------------- Root Variables --------------------- */
+:root{
+    --color-primary: #00008B;
+    --color-danger: #FF4500;
+    --color-warning: #e1ff00;
+    --color-success: #00ff2a;
+    --color-white: #ffffff;
+    --color-info-dark: #7d8da1;
+    --color-info-light: #7dc1eb;
+    --color-dark: #363949;
+    --color-light: rgba(132,139,200,0.18);
+    --color-primary-variant: #4169E1;
+    --color-dark-variant: #3F3F3F;
+    --color-background: #f6f6f9;
+
+    --card-border-radius: 2rem;
+    --border-radius-1: .4rem;
+    --border-radius-2: .8rem;
+    --border-radius-3: 1.2rem;
+
+    --card-padding: 1.8rem;
+    --padding-1: 1.2rem;
+
+    --box-shadow: 0 2rem 3rem var(--color-light)
+}
+/***************** Dark Theme Variants *******************/
+.dark-theme-variables{
+    --color-primary: #4169E1;
+     --color-background: #181a1e;
+     --color-white: #272c2f;
+     --color-dark: #edeffd;  
+     --color-dark-variant: #a3bdcc;
+     --color-light: rgba(0,0,0,.4);
+     --box-shadow: 0 2rem 3rem var(var(--color-light));
+    }
+/* main atributes */
+main {
+    height: calc(100% - 50px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20%;
+    background: var(--color-background);
+}
+.text{
+    width: 100%;
+    text-align: center;
+    padding: var(--padding-1);
+}
+h1{
+    color: var(--color-primary);
+}
+.btn{
+    margin-top: 2rem;
+    padding: var(--padding-1);
+    width: 100%;
+    background-color: transparent;
+    border: 2px dashed var(--color-primary);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    cursor: pointer;
+}
+.btn:hover{
+    background-color: var(--color-primary);
+    border: 2px dashed var(--color-white);
+    color: var(--color-white);
+}
+
+
+
+
+

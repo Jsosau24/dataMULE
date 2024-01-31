@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div id="flash-messages" class="flash-messages"> 
+            {% for message in messages %}
+                <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+</div>
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </div>
+    <h1>Welcome back {{user.first_name}} {{user.last_name}}!</h1>
+</div>
+<div class="btn-cluster">
+    <a class="btn" href="{{ url_for('main.team_edit_dashboard') }}">
+        <h2> Edit Users in Team</h2>
+    </a>
+    <a class="btn" href="{{ url_for('main.new_team') }}">
+        <h2> New Team</h2>
+    </a>
+</div>
+<div class="btn-cluster">
+    <a class="btn" href="{{ url_for('main.new_user') }}">
+        <h2> New User</h2>
+    </a>
+    <a class="btn" href="{{ url_for('main.upload_file') }}">
+        <h2> New Users (CSV)</h2>
+    </a>
+</div>      
+<div class="btn-cluster">
+    <a class="btn" href="{{ url_for('main.new_note') }}">
+        <h2> New Note</h2>
+    </a>
+    <a class="btn" href="{{ url_for('main.notes_dashboard') }}">
+        <h2> Notes Dashboard</h2>
+    </a>
+</div>
+<div class="btn-cluster-ind">
+    <a class="btn" href="{{ url_for('main.user_edit_dashboard') }}">
+        <h2> Edit User's Information</h2>
+    </a>
+</div>
+
+<div class="tables">
+
+    <div>
+        <div class="input-cluster" style="width: 100%;">
+            <div class="input-box" style="width: 100%;">
+                <input type="text" required="required" onkeyup="filterList(this, document.getElementById('athleteList'))">
+                <span>Lookup an Athlete</span>
+            </div>
+        </div>
+
+        <ul class="list-group" id="athleteList">
+            {% for athlete in athletes %}
+            <a href="/athlete/{{ athlete.id }}">
+                <li class="list-group-item">{{ athlete.first_name }} {{ athlete.last_name }}</li>
+            </a>
+            {% endfor %}
+        </ul>
+
+    </div>
+    <!-- --------------- End of table 1 -------------- -->
+    
+    <div>
+        <div class="input-cluster" style="width: 100%;">
+            <div class="input-box" style="width: 100%;">
+                <input type="text" required="required" onkeyup="filterList(this, document.getElementById('teamList'))">
+                <span>Lookup an Athlete</span>
+            </div>
+        </div>
+
+        <ul class="list-group" id="teamList">
+            {% for team in teams %}
+            <a href="/team/{{ team.id }}">
+                <li class="list-group-item">{{ team.name }}</li>
+            </a>
+            {% endfor %}
+        </ul>
+
+    </div>
+    <!-- --------------- End of table 2 -------------- -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterList(inputElement, listElement) {
+            let filter = inputElement.value.toUpperCase();
+            let li = listElement.getElementsByTagName('li');
+            
+            // Loop through all list items, and hide those who don't match the search query
+            for (let i = 0; i < li.length; i++) {
+                let text = li[i].textContent || li[i].innerText;
+                li[i].style.display = (text.toUpperCase().indexOf(filter) > -1) ? "" : "none";
+            }
+        }
+
+        window.onload = function () {
+            setTimeout(function () {
+                var flashMsg = document.getElementById('flash-messages');
+                if (flashMsg) {
+                flashMsg.style.display = 'none';
+                }
+            }, 5000);  // 5000ms = 5s
+        };
+</script>
+{% endblock %}

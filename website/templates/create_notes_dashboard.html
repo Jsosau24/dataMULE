@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Note{% endblock %}
+
+{% block content %}
+
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </div>
+    <h1>New Note</h1>
+</div>
+
+<form class="two-col-dash" action="{{ url_for('main.new_note') }}" method="post">
+    <div style="width: 100%;">
+        <div class="input-box" style="width: 100%;">
+            <input type="text" id="athleteSearch" onkeyup="filterList(this, document.getElementById('athleteList'))">
+            <span>Lookup an Athlete</span>
+        </div>
+        <ul class="list-group" id="athleteList">
+            {% for athlete in athletes %}
+            <li class="list-group-item" onclick="checkRadio('athlete{{ athlete.id }}')">
+                <input type="radio" id="athlete{{ athlete.id }}" name="athlete" value="{{ athlete.id }}">
+                <label for="athlete{{ athlete.id }}">{{ athlete.first_name }} {{ athlete.last_name }}</label>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- end of first column -->
+
+    <div style="width: 100%;">
+        <div class="input-box" style="width: 100%;">
+            <input type="text" required="required" id="note" name="note">
+            <span>Note</span>
+        </div>
+
+        <h2>Status Change</h2>
+        <select class="form-control" id="status" name="status">
+            <option value="0">Clear</option>
+            <option value="1">Warning</option>
+            <option value="2">Not Clear</option>
+        </select>
+        <div class="btn-cluster-ind" style="padding: 0;"><button value="Submit Note" type="submit" class="btn" id="submit-btn">Submit</button></div>
+        <!-- end of second column -->
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to check a radio button when the li is clicked
+    function checkRadio(radioId) {
+            document.getElementById(radioId).checked = true;
+        }
+
+        $(document).ready(function() {
+            // Code to add 'active' class to clicked li and remove from others
+            $('#athleteList .list-group-item').on('click', function() {
+                // Remove 'active' class from all items
+                $('#athleteList .list-group-item').removeClass('active');
+                
+                // Add 'active' class to the clicked item
+                $(this).addClass('active');
+            });
+        });
+
+        // Code to prevent form submission if no athlete is selected
+        document.querySelector('.two-col-dash').addEventListener('submit', function(event) {
+            var radios = document.getElementsByName('athlete');
+            var hasSelected = Array.from(radios).some(radio => radio.checked);
+
+            if (!hasSelected) {
+                alert('Please select an athlete.');
+                event.preventDefault();  // Stop the form from submitting
+            }
+        });
+
+        function filterList(inputElement, listElement) {
+            let filter = inputElement.value.toUpperCase();
+            let li = listElement.getElementsByTagName('li');
+
+            for (let i = 0; i < li.length; i++) {
+                let label = li[i].getElementsByTagName('label')[0];
+                let txtValue = label.textContent || label.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    li[i].style.display = "";
+                } else {
+                    li[i].style.display = "none";
+                }
+            }
+        }
+</script>
+{% endblock %}

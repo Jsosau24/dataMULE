@@ -1,0 +1,65 @@
+<!--
+Jonathan Sosa
+dataMULE
+May - June 23
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dataMULE - Sign In</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='main_stylesheet.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sign_in_stylesheet.css') }}">
+    <!-- fonts -->
+
+</head>
+<body>
+
+    <!-- Main Body -->
+    <main>
+      <!-- Main container -->
+      <div class="container-fluid">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class=flashes>
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        <h1 class="text">dataMULE</h1>
+        <h2 class="text">Sign In</h2>
+        <form method='POST'>
+          <div class="input-cluster">
+            <div class="input-box">
+              <input type="text" required="required" id="colby_id" name="colby_id">
+              <span>Colby ID</span>
+            </div>
+            <div class="input-box">
+              <input type="password" required="required" id="password" name="password">
+              <span>Password</span>
+            </div>
+          </div>
+          <button type="submit" class="btn" id="sign-in-btn">Sign In</button>
+        </form>
+      </div>
+  </main>
+
+  <script>
+    window.onload = function () {
+            setTimeout(function () {
+                var flashMsg = document.getElementById('flash-messages');
+                if (flashMsg) {
+                flashMsg.style.display = 'none';
+                }
+            }, 5000);  // 5000ms = 5s
+        };
+  </script>
+  
+    
+</body>
+</html>
