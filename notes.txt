@@ -7,3 +7,11 @@ requiremtnts.txt
 pipreqs /path/to/project
 
 pip install -r requirements.txt
+
+when 
+- creating a new user send an email to create a password
+- when click on forgot password send an email to for resetting the password
+
+pages:
+- create a new password
+- resset password 

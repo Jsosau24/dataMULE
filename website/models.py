@@ -52,11 +52,17 @@ class Athlete(User):
     __tablename__ = 'athletes'
     
     colby_id = db.Column(db.Integer, db.ForeignKey('users.colby_id'), primary_key=True)
+    hawkin_api_id = db.Column(db.String, nullable=True)
     status = db.Column(db.Integer)
     gender = db.Column(db.String(50))
     class_year = db.Column(db.Integer)
     position = db.Column(db.String(50))
-    hawkin_api_id = db.Column(db.String, nullable=True)
+    
+    # Maxes for calculations 
+    jh_max = db.Column(db.Integer)
+    rfd_max = db.Column(db.Integer)
+    mrsi_max = db.Column(db.Integer)
+    ppf_max = db.Column(db.Integer)
 
     __mapper_args__ = {
         'polymorphic_identity':'athlete',
@@ -65,6 +71,7 @@ class Athlete(User):
 class AthletePerformance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
+
     jump_height = db.Column(db.Float, nullable=False)
     braking_rfd = db.Column(db.Float, nullable=False)  # Rate of Force Development
     mrsi = db.Column(db.Float, nullable=False)  # Modified Reactive Strength Index
@@ -84,6 +91,12 @@ class Team(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+
+    # Maxes for calculations 
+    jh_max = db.Column(db.Integer)
+    rfd_max = db.Column(db.Integer)
+    mrsi_max = db.Column(db.Integer)
+    ppf_max = db.Column(db.Integer)
 
     team_associations = db.relationship('TeamUserAssociation', back_populates="team")
 

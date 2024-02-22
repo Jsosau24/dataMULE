@@ -238,7 +238,7 @@ def user_edit(id):
                     email = request.form.get('email'),
                     gender = request.form.get('gender'),
                     class_year = request.form.get('class_year'),
-                    
+                    hawkin_api_id = request.form.get('hawkin')
                     )
                 db.session.delete(edited_user)
                 db.session.add(u)

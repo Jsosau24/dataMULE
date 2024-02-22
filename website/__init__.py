@@ -48,6 +48,7 @@ def create_app():
         if not path.exists('website/database.db'):
             # Assuming create_database is a function you've defined to initialize your database
             create_database(app)
+            create_dummy_users(app)
         # You can also call a function here to create dummy users or any other initial setup
 
     @login_manager.user_loader
