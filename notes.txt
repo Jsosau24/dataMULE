@@ -15,3 +15,34 @@ when
 pages:
 - create a new password
 - resset password 
+
+import os
+from dotenv import load_dotenv
+
+def update_env_file(env_file_path, key, new_value):
+    """Update or add an environment variable in the .env file."""
+    # Attempt to read the existing lines
+    try:
+        with open(env_file_path, 'r') as file:
+            lines = file.readlines()
+    except FileNotFoundError:
+        lines = []
+    
+    # Check if the key exists and update it
+    key_found = False
+    for i, line in enumerate(lines):
+        if line.startswith(f"{key}="):
+            lines[i] = f"{key}={new_value}\n"
+            key_found = True
+            break
+    
+    # If the key wasn't found, append it
+    if not key_found:
+        lines.append(f"{key}={new_value}\n")
+    
+    # Write the changes back to the .env file
+    with open(env_file_path, 'w') as file:
+        file.writelines(lines)
+
+# Example usage
+update_env_file('.env', 'new_variable', 'updated_value')

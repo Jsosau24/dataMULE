@@ -4,6 +4,13 @@
     <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500&display=swap" rel="stylesheet">
 
+    <!-- Date picker -->
+    <!-- Light Theme (default) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Dark Theme -->
+    <link id="flatpickrTheme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css" disabled>
+
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -85,6 +92,8 @@
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <script>
         const sideMenu = document.querySelector("aside");
         const closeBtn = document.querySelector("#close-btn");
@@ -121,8 +130,6 @@
                 themeSelector.querySelector('span:nth-child(2)').classList.toggle('active', isDark);
             }
         });
-
-
     </script>
 
     {% block extra_js %}

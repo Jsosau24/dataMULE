@@ -4,6 +4,13 @@
 
 {% block content %}
 
+<style>
+    @keyframes fatigue{100%{stroke-dashoffset: {{circle[0]}};}}
+    @keyframes jh{100%{stroke-dashoffset: {{circle[1]}};}}
+    @keyframes performance{100%{stroke-dashoffset: {{circle[2]}};}}
+    @keyframes power{100%{stroke-dashoffset: {{circle[3]}};}}
+</style>
+
 <div class="top">
     <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
         <svg xmlns="http://www.w3.org/2000/svg" fill="currentcolor" class="bi bi-list" viewBox="0 0 16 16">
@@ -14,7 +21,7 @@
 </div>
 
 <div class="date">
-    <input type="date">
+    <input type="text" id="datePicker">
 </div>
 
 <div class="insights">
@@ -23,18 +30,20 @@
         <div class="middle">
             <div class="left">
                 <h3>Fatigue data</h3>
-                <h1>1m</h1>
+                <h1>{{ for_avg[0] }}</h1>
             </div>
             <div class="progress">
-                <svg>
-                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
-                </svg>
-                <div class="number">
-                    <p> 75%</p>
+                <div class="outer">
+                    <div class="inner">
+                        <div class="num">{{per[0]}}%</div>
+                    </div>
                 </div>
+                <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <circle style="animation: fatigue 1s linear forwards;"  cx='46' cy='46' r='40' stroke-linecap="round"  />
+                </svg>
             </div>
         </div>
-        <small class="text-muted">Some text</small>
+        <small class="text-muted">(N/s)</small>
     </div>
     <!-- --------------- End of Fatigue rRFD -------------- -->
 
@@ -44,18 +53,20 @@
         <div class="middle">
             <div class="left">
                 <h3>Jump Height data</h3>
-                <h1>1m</h1>
+                <h1>{{ for_avg[1] }}</h1>
             </div>
             <div class="progress">
-                <svg>
-                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
-                </svg>
-                <div class="number">
-                    <p> 75%</p>
+                <div class="outer">
+                    <div class="inner">
+                        <div class="num">{{per[1]}}%</div>
+                    </div>
                 </div>
+                <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <circle style="animation: jh 1s linear forwards;"  cx='46' cy='46' r='40' stroke-linecap="round"  />
+                </svg>
             </div>
         </div>
-        <small class="text-muted">Some text</small>
+        <small class="text-muted">(Meters)</small>
     </div>
     <!-- --------------- End of Jump Height -------------- -->
 
@@ -65,18 +76,20 @@
         <div class="middle">
             <div class="left">
                 <h3>Performance data</h3>
-                <h1>1m</h1>
+                <h1>{{ for_avg[2] }}</h1>
             </div>
             <div class="progress">
-                <svg>
-                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
-                </svg>
-                <div class="number">
-                    <p> 75%</p>
+                <div class="outer">
+                    <div class="inner">
+                        <div class="num">{{per[2]}}%</div>
+                    </div>
                 </div>
+                <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <circle style="animation: performance 1s linear forwards;"  cx='46' cy='46' r='40' stroke-linecap="round"  />
+                </svg>
             </div>
         </div>
-        <small class="text-muted">Some text</small>
+        <small class="text-muted">Relative units</small>
     </div>
     <!-- --------------- End of Performance -------------- -->
 
@@ -86,18 +99,20 @@
         <div class="middle">
             <div class="left">
                 <h3>Power data</h3>
-                <h1>1m</h1>
+                <h1>{{ for_avg[3] }}</h1>
             </div>
             <div class="progress">
-                <svg>
-                    <circle cx='38' cy='38' r='36' style="stroke-dasharray: 172.5; /*230 = 100%*/"></circle>
-                </svg>
-                <div class="number">
-                    <p> 75%</p>
+                <div class="outer">
+                    <div class="inner">
+                        <div class="num">{{per[3]}}%</div>
+                    </div>
                 </div>
+                <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <circle style="animation: power 1s linear forwards;"  cx='46' cy='46' r='40' stroke-linecap="round"  />
+                </svg>
             </div>
         </div>
-        <small class="text-muted">Some text</small>
+        <small class="text-muted">(Newtons)</small>
     </div>
     <!-- --------------- End of Power -------------- -->
 </div>
@@ -117,5 +132,23 @@
     </table>
 </div>
 <!-- --------------- End of Athletes -------------- -->
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    var availableDates = {{ distinct_dates | tojson | safe }};
+
+    flatpickr("#datePicker", {
+        enableTime: false,
+        dateFormat: "Y-m-d",
+        defaultDate: "{{date}}",
+        enable: availableDates,
+        onChange: function(selectedDates, dateStr, instance) {
+            const athleteId = '{{ athlete.id }}'; // Make sure the athlete's ID is available
+            // Redirect to the Flask route with the selected date as a query parameter
+            window.location.href = `/athlete/${athleteId}?date=${dateStr}`;
+        }
+    });
+</script>
 
 {% endblock %}
