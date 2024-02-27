@@ -892,7 +892,6 @@ def prep():
 
     return redirect(url_for('main.home'))
 
-
 @routes.route('/prep_team')
 @login_required
 def prep_team():
