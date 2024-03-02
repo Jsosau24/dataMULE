@@ -257,7 +257,6 @@ def team(id):
     m = team.ppf_max
     d = avg_metrics[3]
     p = (d*100)/m
-    print(p)
     c = 250 - (250*(p/100))
     per.append(int(p))
     circle.append(int(c))
@@ -742,28 +741,28 @@ def upload_file():
 @routes.route('/user/remove/<int:id>', methods=['POST'])
 @login_required
 def remove_user(id):
-    # Ensure the current user is an admin
     if current_user.type != "admin":
         return "<h1>NO ACCESS</h1>"
 
     user = User.query.get(id)
-
-    # Check if the user exists
     if not user:
         return "<h1>User not found</h1>"
 
-    # Remove all associated TeamUserAssociation entries
+    # First, remove AthletePerformance records if the user is an Athlete
+    if hasattr(user, 'performances'):
+        for performance in user.performances:
+            db.session.delete(performance)
+
+    # Then, remove all associated TeamUserAssociation entries
     associations = TeamUserAssociation.query.filter_by(user_id=id).all()
     for association in associations:
         db.session.delete(association)
 
-    # Remove the user from the database
+    # Now, it's safe to remove the user
     db.session.delete(user)
     db.session.commit()
 
-    # Prepare the response JSON
     response = {"success": True}
-
     return jsonify(response)
 
 @routes.route('/new_team')
@@ -824,6 +823,55 @@ def delete_team(team_id):
 
     return jsonify(success=True), 200
 
+# initialize DB with API
+@routes.route('/init_team/<int:team_id>')
+@login_required
+def init_team(team_id):
+
+    team = Team.query.get(team_id)
+    team_members = [association.user for association in team.team_associations]
+    athletes = [member for member in team_members if member.type == 'athlete']
+    api_ids = [athlete.hawkin_api_id for athlete in athletes]
+    end_date = datetime.today().date()
+    start_date = datetime(2023, 8, 1).date()
+
+    for athl in api_ids:
+
+        athlete = Athlete.query.filter_by(hawkin_api_id=athl).first()
+        # Collect the data from the API
+        data = get_athlete_data(athl)
+        data = data['data']
+
+        # parse the data from the API
+        for jump in data:
+            # Collects the data from the API
+            try:
+                j = AthletePerformance(
+                    date=datetime.utcfromtimestamp(jump['timestamp']),
+                    jump_height=jump['Jump Height(m)'],
+                    braking_rfd=jump['Braking RFD(N/s)'],
+                    mrsi=jump['mRSI'],
+                    peak_propulsive_force=jump['Peak Propulsive Force(N)'],
+                    athlete_id=athlete.colby_id  # Use the athlete's ID
+                )
+                db.session.add(j)
+            except:
+                pass
+
+            try:
+                db.session.commit()
+                flash('Athlete performance data added successfully.', 'success')
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                flash('Error adding performance data.', 'error')
+
+        # Sets the max for the athletes
+        set_max(athlete.colby_id, start_date, end_date)  
+
+    set_max_team(team_id, start_date, end_date) 
+
+    return redirect(url_for('main.home')) 
+
 # test API routes
 @routes.route('/test_api')
 @login_required
@@ -852,11 +900,9 @@ def test_api():
     try:
         db.session.commit()
         flash('Athlete performance data added successfully.', 'success')
-        print('ture') 
     except SQLAlchemyError as e:
         db.session.rollback()
         flash('Error adding performance data.', 'error')
-        print('false')
 
     return redirect(url_for('main.home'))
 
@@ -884,7 +930,7 @@ def prep():
             db.session.commit()
             print("Athlete updated successfully")
         except Exception as e:
-            db.session.rollback()  # It's good practice to rollback in case of error
+            db.session.rollback()  
             print(f"Error updating athlete: {e}")
         
     else:
@@ -925,7 +971,7 @@ def prep_team():
             db.session.commit()
             print("Team updated successfully")
         except Exception as e:
-            db.session.rollback()  # It's good practice to rollback in case of error
+            db.session.rollback()  
             print(f"Error updating Team: {e}")
         
     else:
