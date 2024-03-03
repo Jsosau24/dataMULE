@@ -1,10 +1,14 @@
 from dotenv import load_dotenv
 import os
 import requests
+import time
 from .models import *
 from . import db
 from sqlalchemy import func
 from datetime import datetime, timedelta
+from flask import flash
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+import time
 
 def get_access_token():
     ''' collects the access token'''
@@ -17,7 +21,6 @@ def get_access_token():
     auth_response.raise_for_status()  
     return (auth_response.json().get('access_token'))
 
-
 def get_athlete_data(hawkin_api_id):
     ''' Collect the data from an individual athlete'''
     access_token = get_access_token()
@@ -25,25 +28,83 @@ def get_athlete_data(hawkin_api_id):
     headers = {
         'Authorization': f'Bearer {access_token}',
     }
-    test  = requests.get(url, headers=headers)
-    return(test.json())
+    data  = requests.get(url, headers=headers)
+    return(data.json())
     
-def parse_jump_data(data, db):
-    '''Parse the data form the API and sets it to a more manage format'''
+def update_db():
+    ''' Function to update the databse constantly'''
 
+    print('inside')
+
+    # Get the current UNIX timestamp
+    now = int(time.time())
+
+    load_dotenv()
+    last = os.getenv('api_last_update')
+
+    update_env_file('.env', 'api_last_update', now)
+
+    access_token = get_access_token()
+
+    url = f'https://cloud.hawkindynamics.com/api/colby?from={last}&to={now}'
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+    data  = requests.get(url, headers=headers)
+    data = data.json()
     data = data['data']
-    clean_data = [['hawking-id'],['Timestamp'],['Jump Height'],['Braking RFD'],['Peak Propulsive Force'],['mRSI']]
 
     for jump in data:
+        # Collects the data from the API
+        athlete = Athlete.query.filter_by(hawkin_api_id=jump['athlete']['id']).first()
+        print(athlete)
 
-        athlete_id = jump['athlete']['id']
-        timestamp = jump['timestamp']
-        jh = jump['Jump Height(m)']
-        rfd = jump['Braking RFD(N/s)']
-        ppf = jump['Peak Propulsive Force(N)']
-        mrsi = jump['mRSI']
+        try:
+            j = AthletePerformance(
+                date=datetime.utcfromtimestamp(jump['timestamp']),
+                jump_height=jump['Jump Height(m)'],
+                braking_rfd=jump['Braking RFD(N/s)'],
+                mrsi=jump['mRSI'],
+                peak_propulsive_force=jump['Peak Propulsive Force(N)'],
+                athlete_id=athlete.colby_id  
+            )
+            db.session.add(j)
+        except:
+            pass
 
-    return(clean_data)
+        try:
+            db.session.commit()
+            flash('Athlete performance data added successfully.', 'success')
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            flash('Error adding performance data.', 'error')
+
+        # Current end date
+        end_date = datetime.today().date()
+        start_date = datetime(end_date.year, 8, 1).date()
+
+        # Check if the start date is later in the year than the end date
+        if start_date > end_date:
+            # If so, set the start date to August 1st of the previous year
+            start_date = datetime(end_date.year - 1, 8, 1).date()
+
+        try:
+
+            set_max(athlete.colby_id, start_date, end_date)
+
+        except:
+            pass
+
+        try:
+            team_associations = athlete.team_associations
+            teams = [association.team for association in team_associations]
+
+            for team in teams:
+                set_max_team(team.id, start_date, end_date)
+        except:
+            pass
+
+    return
 
 def set_max(athlete_id, start_date, end_date):
     '''Sets the max values for the athletes'''
@@ -119,6 +180,30 @@ def set_max_team(team_id, start_date, end_date):
 
     return
 
+def update_env_file(env_file_path, key, new_value):
+    """Update or add an environment variable in the .env file."""
+    # Attempt to read the existing lines
+    try:
+        with open(env_file_path, 'r') as file:
+            lines = file.readlines()
+    except FileNotFoundError:
+        lines = []
+    
+    # Check if the key exists and update it
+    key_found = False
+    for i, line in enumerate(lines):
+        if line.startswith(f"{key}="):
+            lines[i] = f"{key}={new_value}\n"
+            key_found = True
+            break
+    
+    # If the key wasn't found, append it
+    if not key_found:
+        lines.append(f"{key}={new_value}\n")
+    
+    # Write the changes back to the .env file
+    with open(env_file_path, 'w') as file:
+        file.writelines(lines)
 
 
 

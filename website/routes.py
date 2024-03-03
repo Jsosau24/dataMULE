@@ -824,7 +824,7 @@ def create_team():
         start_date = datetime(end_date.year - 1, 8, 1).date()
 
     set_max_team(id, start_date, end_date)
-    
+
     return redirect(url_for('main.team', id=new_team.id))
 
 @routes.route('/delete_team/<int:team_id>', methods=['POST'])
@@ -864,7 +864,6 @@ def init_team(team_id):
         # If so, set the start date to August 1st of the previous year
         start_date = datetime(end_date.year - 1, 8, 1).date()
 
-    print(start_date)
 
     for athl in api_ids:
 
@@ -908,104 +907,6 @@ def init_team(team_id):
 @login_required
 def test_api():
 
-    athlete = Athlete.query.filter_by(hawkin_api_id='Jxhi9QTiamSwrSm15rkI').first()
-
-    data = get_athlete_data('Jxhi9QTiamSwrSm15rkI')
-    data = data['data']
-
-    for jump in data:
-
-        try:
-            j = AthletePerformance(
-                date=datetime.utcfromtimestamp(jump['timestamp']),
-                jump_height=jump['Jump Height(m)'],
-                braking_rfd=jump['Braking RFD(N/s)'],
-                mrsi=jump['mRSI'],
-                peak_propulsive_force=jump['Peak Propulsive Force(N)'],
-                athlete_id=athlete.colby_id  # Use the athlete's ID
-            )
-            db.session.add(j)
-        except:
-            pass
-
-    try:
-        db.session.commit()
-        flash('Athlete performance data added successfully.', 'success')
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        flash('Error adding performance data.', 'error')
-
-    return redirect(url_for('main.home'))
-
-@routes.route('/prep')
-@login_required
-def prep():
-
-    max_values = db.session.query(
-        func.max(AthletePerformance.jump_height).label('max_jump_height'),
-        func.max(AthletePerformance.braking_rfd).label('max_braking_rfd'),
-        func.max(AthletePerformance.mrsi).label('max_mrsi'),
-        func.max(AthletePerformance.peak_propulsive_force).label('max_peak_propulsive_force')
-    ).filter(
-        AthletePerformance.athlete_id == 728088,
-    ).first()
-
-    a = Athlete.query.filter_by(colby_id=728088).first()
-    if a:
-        a.jh_max = max_values[0]
-        a.rfd_max = max_values[1]
-        a.mrsi_max = max_values[2]
-        a.ppf_max = max_values[3]
-
-        try:
-            db.session.commit()
-            print("Athlete updated successfully")
-        except Exception as e:
-            db.session.rollback()  
-            print(f"Error updating athlete: {e}")
-        
-    else:
-        print("Athlete not found")
-
-    return redirect(url_for('main.home'))
-
-@routes.route('/prep_team')
-@login_required
-def prep_team():
-
-    id = 2
-    team = Team.query.get(id)
-
-    team_members = [association.user for association in team.team_associations]
-    # Filter only athletes if needed
-    athletes = [member for member in team_members if member.type == 'athlete']
-
-    colby_ids = [athlete.colby_id for athlete in athletes]
-
-    max_values = db.session.query(
-        func.max(AthletePerformance.jump_height).label('max_jump_height'),
-        func.max(AthletePerformance.braking_rfd).label('max_braking_rfd'),
-        func.max(AthletePerformance.mrsi).label('max_mrsi'),
-        func.max(AthletePerformance.peak_propulsive_force).label('max_peak_propulsive_force')
-    ).filter(
-        AthletePerformance.athlete_id.in_(colby_ids)  # Use .in_() to filter by a list of IDs
-    ).first()
-
-    a = Team.query.filter_by(id=id).first()
-    if a:
-        a.jh_max = max_values[0]
-        a.rfd_max = max_values[1]
-        a.mrsi_max = max_values[2]
-        a.ppf_max = max_values[3]
-
-        try:
-            db.session.commit()
-            print("Team updated successfully")
-        except Exception as e:
-            db.session.rollback()  
-            print(f"Error updating Team: {e}")
-        
-    else:
-        print("Athlete not found")
+    update_db()
 
     return redirect(url_for('main.home'))
