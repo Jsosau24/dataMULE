@@ -505,7 +505,18 @@ def team_edit(id):
     # Example of how to use the has_athlete function
     for athlete in athletes:
         print(athlete)
-        print(has_athlete(team, athlete))  # This should print True or False
+        print(has_athlete(team, athlete))  
+
+    # Current end date
+    end_date = datetime.today().date()
+    start_date = datetime(end_date.year, 8, 1).date()
+
+    # Check if the start date is later in the year than the end date
+    if start_date > end_date:
+        # If so, set the start date to August 1st of the previous year
+        start_date = datetime(end_date.year - 1, 8, 1).date()
+
+    set_max_team(id, start_date, end_date)
 
     return render_template('team_edit.html', athletes=athletes, peaks=peaks, user=current_user, team=team, coaches=coaches, has_athlete=has_athlete, has_coach=has_coach, has_peak=has_peak)
 
@@ -802,6 +813,18 @@ def create_team():
 
     db.session.commit()
     flash('Team created successfully.', 'success')
+
+    # Current end date
+    end_date = datetime.today().date()
+    start_date = datetime(end_date.year, 8, 1).date()
+
+    # Check if the start date is later in the year than the end date
+    if start_date > end_date:
+        # If so, set the start date to August 1st of the previous year
+        start_date = datetime(end_date.year - 1, 8, 1).date()
+
+    set_max_team(id, start_date, end_date)
+    
     return redirect(url_for('main.team', id=new_team.id))
 
 @routes.route('/delete_team/<int:team_id>', methods=['POST'])
@@ -832,8 +855,16 @@ def init_team(team_id):
     team_members = [association.user for association in team.team_associations]
     athletes = [member for member in team_members if member.type == 'athlete']
     api_ids = [athlete.hawkin_api_id for athlete in athletes]
+    # Current end date
     end_date = datetime.today().date()
-    start_date = datetime(2023, 8, 1).date()
+    start_date = datetime(end_date.year, 8, 1).date()
+
+    # Check if the start date is later in the year than the end date
+    if start_date > end_date:
+        # If so, set the start date to August 1st of the previous year
+        start_date = datetime(end_date.year - 1, 8, 1).date()
+
+    print(start_date)
 
     for athl in api_ids:
 
