@@ -2,7 +2,6 @@ from dotenv import load_dotenv
 import os
 import requests
 import time
-from .models import *
 from . import db
 from sqlalchemy import func
 from datetime import datetime, timedelta
@@ -34,8 +33,6 @@ def get_athlete_data(hawkin_api_id):
 def update_db():
     ''' Function to update the databse constantly'''
 
-    print('inside')
-
     # Get the current UNIX timestamp
     now = int(time.time())
 
@@ -53,6 +50,8 @@ def update_db():
     data  = requests.get(url, headers=headers)
     data = data.json()
     data = data['data']
+
+    from .models import Athlete, AthletePerformance
 
     for jump in data:
         # Collects the data from the API
@@ -104,10 +103,13 @@ def update_db():
         except:
             pass
 
+    print('worked')
+
     return
 
 def set_max(athlete_id, start_date, end_date):
     '''Sets the max values for the athletes'''
+    from .models import Athlete, AthletePerformance
     max_values = db.session.query(
         func.max(AthletePerformance.jump_height).label('max_jump_height'),
         func.max(AthletePerformance.braking_rfd).label('max_braking_rfd'),
@@ -148,6 +150,7 @@ def set_max(athlete_id, start_date, end_date):
     return
 
 def set_max_team(team_id, start_date, end_date):
+    from .models import Team, AthletePerformance
     '''Sets the max for the team'''
     team = Team.query.get(team_id)
     team_members = [association.user for association in team.team_associations]
