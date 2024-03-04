@@ -74,7 +74,7 @@ img{
 }
 h1{
     font-weight: 800;
-    font-size: 1.8rem;
+    font-size: 1.2rem;
 }
 h2{
     font-size: 1.4rem;
@@ -300,28 +300,50 @@ main .insights .progress{
     width: 92px;
     height: 92px;
     border-radius: 50%;
-}
-main .insights svg{
-    width: 7rem;
-    height: 7rem;
-}
-main .insights svg circle{
-    fill: none;
-    stroke: var(--color-primary);
-    stroke-width: 14;
-    stroke-linecap: round;
-    transform: translate(5px,5px);
-}
-main .insights .progress .number{
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    display: flex;
     justify-content: center;
     align-items: center;
 }
+main .insights .progress .outer{
+    display: flex;
+    height: 100%;
+    width: 100%;
+    border-radius: 50%;
+    box-shadow: 3px 3px 5px -1px var(--color-light), -3px -3px 5px -1px var(--color-light);
+    padding: 12.5%;
+    justify-content: center !important;
+    align-items: center !important;
+}
+main .insights .progress .outer .inner{
+    display: flex;
+    height: 100%;
+    width: 100%;
+    border-radius: 50%;
+    box-shadow: 3px 3px 5px -1px var(--color-light), -3px -3px 5px -1px var(--color-light);
+    justify-content: center !important;
+    align-items: center !important;
+}
+main .insights .progress .outer .inner .num{
+    display: flex;
+    font-weight: 600;
+    color: var(--color-primary);
+    justify-content: center;
+    align-items: center;
+}
+main .insights .progress svg{
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+main .insights .progress svg circle{
+    fill: none;
+    stroke: var(--color-primary-variant);
+    stroke-width: 10%;
+    stroke-dasharray: 250;
+    stroke-dashoffset: 250;
+}
+
 main .insights small{
     margin-top: 1.6rem;
     display: block;
