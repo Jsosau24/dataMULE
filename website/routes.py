@@ -90,6 +90,7 @@ def home():
 @routes.route('/athlete')
 @login_required
 def athlete():
+ 
     if current_user.type != "athlete":
         return "<h1>NO ACCESS</h1>"
     
@@ -97,10 +98,7 @@ def athlete():
     
     date = request.args.get('date', None)
 
-    if current_user.type == "athlete":
-        return "<h1>NO ACCESS</h1>"
-    
-    athlete = Athlete.query.get(id)
+    #athlete = Athlete.query.get(id)
     visible_notes = [note for note in athlete.received_notes if note.visible]
 
     if date == None:

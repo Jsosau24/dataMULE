@@ -16,6 +16,7 @@ from werkzeug.utils import secure_filename
 import pandas as pd
 import os
 from . import db
+from .email import *
 
 #functions
 from werkzeug.security import generate_password_hash
@@ -24,7 +25,6 @@ def create_user(colby_id, first_name, last_name, email, gender, class_year, user
     """
     This function creates new users and optionally associates them with a team.
     """
-    print(f"Creating user: {colby_id}, {first_name}, {user_type}")  
     used_email = User.query.filter_by(email=email).first()
 
     if used_email:
@@ -73,6 +73,14 @@ def create_user(colby_id, first_name, last_name, email, gender, class_year, user
         else:
             print("Invalid user type")  # Debugging
             return False, [colby_id, 'wrong type of user']
+
+        token = generate_password_reset_token(email)
+        
+        # Generate URL for setting password
+        reset_url = url_for('auth.reset_password', token=token, _external=True)
+        
+        # Send email with password reset link
+        send_email(email, 'Set Your Password', 'mail/password_reset', reset_url=reset_url)
 
         # Add user to the database
         db.session.add(new_user)

@@ -16,6 +16,14 @@ pages:
 - create a new password
 - resset password 
 
+
+
+noreply.datamule@gmail.com
+DATAmule2024
+
+1709436992
+1709569290
+
 import os
 from dotenv import load_dotenv
 

@@ -19,6 +19,8 @@ import time
 from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
+from .email import mail
+from flask_mail import Mail
 
 def configure():
     load_dotenv()
@@ -26,6 +28,7 @@ def configure():
 configure()
 
 secret_key = os.getenv('secret_key')
+email_pass = os.getenv('email_pass')
 
 # Initialize the extensions
 db = SQLAlchemy()
@@ -36,11 +39,20 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
     app.config['SECRET_KEY'] = secret_key
 
+    # Configure Flask-Mail...
+    app.config['MAIL_SERVER'] = 'smtp.office365.com'  # Use Microsoft's SMTP server
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'data.mule2024@outlook.com'
+    app.config['MAIL_PASSWORD'] = email_pass
+    app.config['SECURITY_PASSWORD_SALT'] = os.getenv('SECURITY_PASSWORD_SALT')
+
     # Initialize extensions with the app
     db.init_app(app)
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
+    mail.init_app(app)
 
     # Register blueprints
     from .auth import auth as auth_blueprint
@@ -72,14 +84,17 @@ def create_app():
             teams = None
         return dict(teams=teams)
     
+
     # Scheduler setup
     scheduler = APScheduler()
     scheduler.init_app(app)
     
-    @scheduler.task('interval', id='pull_data_task', seconds=300, misfire_grace_time=900)
+    @scheduler.task('interval', id='pull_data_task', seconds=100, misfire_grace_time=10)
     def scheduled_task():
-        update_db()
-        return
+        with app.app_context():
+            update_db()
+            print('databse updated')
+        
 
     scheduler.start()
 
@@ -101,11 +116,11 @@ def update_db():
 
     # Get the current UNIX timestamp
     now = int(time.time())
-
     load_dotenv()
     last = os.getenv('api_last_update')
-
     update_env_file('.env', 'api_last_update', now)
+    print(now)
+    print(last)
 
     access_token = get_access_token()
 
@@ -122,27 +137,34 @@ def update_db():
     for jump in data:
         # Collects the data from the API
         athlete = Athlete.query.filter_by(hawkin_api_id=jump['athlete']['id']).first()
-        print(athlete)
+        if athlete:
+            existing_record = AthletePerformance.query.filter_by(
+                athlete_id=athlete.colby_id, 
+                date=datetime.utcfromtimestamp(jump['timestamp'])
+            ).first()
 
-        try:
-            j = AthletePerformance(
-                date=datetime.utcfromtimestamp(jump['timestamp']),
-                jump_height=jump['Jump Height(m)'],
-                braking_rfd=jump['Braking RFD(N/s)'],
-                mrsi=jump['mRSI'],
-                peak_propulsive_force=jump['Peak Propulsive Force(N)'],
-                athlete_id=athlete.colby_id  
-            )
-            db.session.add(j)
-        except:
-            pass
+            if not existing_record:
+                try:
+                    j = AthletePerformance(
+                        date=datetime.utcfromtimestamp(jump['timestamp']),
+                        jump_height=jump['Jump Height(m)'],
+                        braking_rfd=jump['Braking RFD(N/s)'],
+                        mrsi=jump['mRSI'],
+                        peak_propulsive_force=jump['Peak Propulsive Force(N)'],
+                        athlete_id=athlete.colby_id  
+                    )
+                    db.session.add(j)
+                except:
+                    pass
 
         try:
             db.session.commit()
-            flash('Athlete performance data added successfully.', 'success')
+            # Instead of using flash, consider logging the success message
+            #app.logger.info('Athlete performance data added successfully.')
         except SQLAlchemyError as e:
             db.session.rollback()
-            flash('Error adding performance data.', 'error')
+            # Log the error instead of using flash
+            #app.logger.error('Error adding performance data: {}'.format(e))
 
         # Current end date
         end_date = datetime.today().date()
@@ -168,8 +190,6 @@ def update_db():
                 set_max_team(team.id, start_date, end_date)
         except:
             pass
-
-    print('worked')
 
     return
 
@@ -206,7 +226,6 @@ def set_max(athlete_id, start_date, end_date):
 
         try:
             db.session.commit()
-            print("Athlete updated successfully")
         except Exception as e:
             db.session.rollback()  
             print(f"Error updating athlete: {e}")
@@ -242,7 +261,6 @@ def set_max_team(team_id, start_date, end_date):
 
         try:
             db.session.commit()
-            print("Team updated successfully")
         except Exception as e:
             db.session.rollback()  
             print(f"Error updating Team: {e}")
