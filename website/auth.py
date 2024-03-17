@@ -1,12 +1,6 @@
-"""
-Jonathan Sosa 
-auth.py
-may-jun 2023
-"""
-
-# routes on the file (you can look these up and it will take you there)
-## login --> handles the login for the page
-## logout --> logout the user
+'''
+This page contains all the routes, related to signin, logout, password reset
+'''
 
 # imoprts
 from flask import Blueprint, request, redirect, url_for, render_template, flash
@@ -82,7 +76,6 @@ def reset_password(token):
 
     # Render the reset password form if GET request or error
     return render_template('reset_password.html', token=token)
-
 
 @auth.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():

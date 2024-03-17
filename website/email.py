@@ -1,3 +1,7 @@
+'''
+This page contains all the functions related to sending emails to users
+'''
+
 from flask_mail import Mail, Message
 from flask import current_app, url_for
 from itsdangerous import URLSafeTimedSerializer
@@ -8,10 +12,10 @@ mail = Mail()
 
 def send_password_reset_email(user_email):
     token = generate_confirmation_token(user_email)
-    msg = Message("Password Reset Request",
+    msg = Message("Password Update Request",
                   sender="data.mule2024@outlook.com",  # Match MAIL_USERNAME
                   recipients=[user_email])
-    msg.body = f'''To reset your password, visit the following link:
+    msg.body = f'''To update your password, visit the following link:
     {url_for('auth.reset_password', token=token, _external=True)}
     If you did not make this request, please ignore this email and no changes will be made.
     '''

@@ -1,7 +1,11 @@
-# methods on the file (you can look these up and it will take you there)
-## create_app --> create the webpage function
-## create_database --> created the database
-## create_dummy_users --> created a dummy database
+'''
+This file contains the configuration of the APP and here are some important highlits of the file
+- creates/loads SQLAlchemy
+- creates/loads the LoginManager
+- APScheduler is initialized and the funtion is there
+
+helper functions for the API are also loceted here to avoid circular imports
+'''
 
 # imports
 from flask import Flask, flash
@@ -22,10 +26,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from .email import mail
 from flask_mail import Mail
 
-def configure():
-    load_dotenv()
-
-configure()
+load_dotenv() # used to update and load values in the .env file
 
 secret_key = os.getenv('secret_key')
 email_pass = os.getenv('email_pass')
@@ -52,7 +53,7 @@ def create_app():
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
-    mail.init_app(app)
+    mail.init_app(app) # initializes flask-mail 
 
     # Register blueprints
     from .auth import auth as auth_blueprint
@@ -74,7 +75,7 @@ def create_app():
         from .models import User
         return User.query.get(int(user_id))
     
-    @app.context_processor
+    @app.context_processor # for the admin user to have acess to all teams
     def inject_teams():
         from .models import Team
         from flask_login import current_user
@@ -84,22 +85,21 @@ def create_app():
             teams = None
         return dict(teams=teams)
     
-
     # Scheduler setup
     scheduler = APScheduler()
     scheduler.init_app(app)
-    
     @scheduler.task('interval', id='pull_data_task', seconds=100, misfire_grace_time=10)
-    def scheduled_task():
+
+    def scheduled_task(): # function that repetas every 100 seconds
         with app.app_context():
             update_db()
             print('databse updated')
         
-
     scheduler.start()
 
     return app
 
+# ----------------------- fuctions for the APScheduler -----------------------
 def get_access_token():
     ''' collects the access token'''
     load_dotenv()
@@ -119,8 +119,6 @@ def update_db():
     load_dotenv()
     last = os.getenv('api_last_update')
     update_env_file('.env', 'api_last_update', now)
-    print(now)
-    print(last)
 
     access_token = get_access_token()
 
@@ -132,20 +130,20 @@ def update_db():
     data = data.json()
     data = data['data']
 
-    from .models import Athlete, AthletePerformance
+    from .models import Athlete, HawkinAthlete
 
     for jump in data:
         # Collects the data from the API
         athlete = Athlete.query.filter_by(hawkin_api_id=jump['athlete']['id']).first()
         if athlete:
-            existing_record = AthletePerformance.query.filter_by(
+            existing_record = HawkinAthlete.query.filter_by(
                 athlete_id=athlete.colby_id, 
                 date=datetime.utcfromtimestamp(jump['timestamp'])
             ).first()
 
             if not existing_record:
                 try:
-                    j = AthletePerformance(
+                    j = HawkinAthlete(
                         date=datetime.utcfromtimestamp(jump['timestamp']),
                         jump_height=jump['Jump Height(m)'],
                         braking_rfd=jump['Braking RFD(N/s)'],
@@ -195,26 +193,26 @@ def update_db():
 
 def set_max(athlete_id, start_date, end_date):
     '''Sets the max values for the athletes'''
-    from .models import Athlete, AthletePerformance
+    from .models import Athlete, HawkinAthlete
     max_values = db.session.query(
-        func.max(AthletePerformance.jump_height).label('max_jump_height'),
-        func.max(AthletePerformance.braking_rfd).label('max_braking_rfd'),
-        func.max(AthletePerformance.mrsi).label('max_mrsi'),
-        func.max(AthletePerformance.peak_propulsive_force).label('max_peak_propulsive_force')
+        func.max(HawkinAthlete.jump_height).label('max_jump_height'),
+        func.max(HawkinAthlete.braking_rfd).label('max_braking_rfd'),
+        func.max(HawkinAthlete.mrsi).label('max_mrsi'),
+        func.max(HawkinAthlete.peak_propulsive_force).label('max_peak_propulsive_force')
     ).filter(
-        AthletePerformance.athlete_id == athlete_id,
-        AthletePerformance.date >= start_date,
-        AthletePerformance.date <= end_date
+        HawkinAthlete.athlete_id == athlete_id,
+        HawkinAthlete.date >= start_date,
+        HawkinAthlete.date <= end_date
     ).first()
 
     if max_values[0] == None:
         max_values = db.session.query(
-        func.max(AthletePerformance.jump_height).label('max_jump_height'),
-        func.max(AthletePerformance.braking_rfd).label('max_braking_rfd'),
-        func.max(AthletePerformance.mrsi).label('max_mrsi'),
-        func.max(AthletePerformance.peak_propulsive_force).label('max_peak_propulsive_force')
+        func.max(HawkinAthlete.jump_height).label('max_jump_height'),
+        func.max(HawkinAthlete.braking_rfd).label('max_braking_rfd'),
+        func.max(HawkinAthlete.mrsi).label('max_mrsi'),
+        func.max(HawkinAthlete.peak_propulsive_force).label('max_peak_propulsive_force')
         ).filter(
-            AthletePerformance.athlete_id == athlete_id,
+            HawkinAthlete.athlete_id == athlete_id,
         ).first()
 
     a = Athlete.query.filter_by(colby_id=athlete_id).first()
@@ -235,7 +233,7 @@ def set_max(athlete_id, start_date, end_date):
     return
 
 def set_max_team(team_id, start_date, end_date):
-    from .models import Team, AthletePerformance
+    from .models import Team, HawkinAthlete
     '''Sets the max for the team'''
     team = Team.query.get(team_id)
     team_members = [association.user for association in team.team_associations]
@@ -243,14 +241,14 @@ def set_max_team(team_id, start_date, end_date):
     colby_ids = [athlete.colby_id for athlete in athletes]
 
     max_values = db.session.query(
-        func.max(AthletePerformance.jump_height).label('max_jump_height'),
-        func.max(AthletePerformance.braking_rfd).label('max_braking_rfd'),
-        func.max(AthletePerformance.mrsi).label('max_mrsi'),
-        func.max(AthletePerformance.peak_propulsive_force).label('max_peak_propulsive_force')
+        func.max(HawkinAthlete.jump_height).label('max_jump_height'),
+        func.max(HawkinAthlete.braking_rfd).label('max_braking_rfd'),
+        func.max(HawkinAthlete.mrsi).label('max_mrsi'),
+        func.max(HawkinAthlete.peak_propulsive_force).label('max_peak_propulsive_force')
     ).filter(
-        AthletePerformance.athlete_id.in_(colby_ids),  
-        AthletePerformance.date >= start_date,
-        AthletePerformance.date <= end_date
+        HawkinAthlete.athlete_id.in_(colby_ids),  
+        HawkinAthlete.date >= start_date,
+        HawkinAthlete.date <= end_date
     ).first()
 
     if team:
@@ -292,14 +290,11 @@ def update_env_file(env_file_path, key, new_value):
     with open(env_file_path, 'w') as file:
         file.writelines(lines)
 
-
-
-#---------------------------
+# ----------------------- fuctions to initializr the database -----------------------
 
 def create_database(app):
     with app.app_context():
         db.create_all()
-        print('Created Database')
 
 def create_dummy_users(app):
     with app.app_context():

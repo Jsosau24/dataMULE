@@ -1,27 +1,6 @@
-"""
-Jonathan Sosa 
-routes.py
-may-jun 2023
-"""
-
-# routes on the file (you can look these up and it will take you there)
-## home --> redirects each user to their homepage
-## athlete --> athlete view or athlete main page
-## team --> team dasboard everyone but athelte has access
-## athlete_coach --> view of an athelte from any other user but athlete
-## admin_dashboard --> main view for an admin
-## team_edit_dashboard --> dashboard with all the teams where you can select one to edit it
-## update_position --> edit the position of an athlete from the team dashboard
-## user_edit_dashboard --> dashboard with all the users where you can chose one to edit it
-## user_edit --> handles the edits on any user
-## team_edit --> page where you can choose users on a team
-## update_team --> backend for updating the team
-## new_note --> creates a new note
-## notes_dashboard --> dasboard with all the notes created by the user
-## update_note_visibility --> handles the backend to change the visibility of a note
-## new_user --> route to create a new user
-## new_user_csv --> creates a number of users using an CSV file
-## remove_user --> removes a user form the db
+'''
+This page contains all the main routes, all the login related functions are in the auth.py file
+'''
 
 # Imports
 from flask import Blueprint, render_template, flash, redirect, url_for, request, jsonify
@@ -31,9 +10,9 @@ from . import db
 from website.helper_functions import create_user
 import pandas as pd
 from flask import current_app
-from website.api_utils import *
+from . import set_max_team
 from werkzeug.security import generate_password_hash
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from datetime import datetime, timedelta
 
@@ -43,11 +22,16 @@ routes = Blueprint('main', __name__)
 #routes
 @routes.route('/')
 def home():
+    '''
+    sees what type of user the current user is and redirects them to their page, if no user is signed up it takes them to the login page
+    '''
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
 
     user = current_user
 
     if user.type == "admin":
-        # Ensure the current user is an admin
         if current_user.type != "admin":
             return "<h1>NO ACCESS</h1>"
 
@@ -90,46 +74,46 @@ def home():
 @routes.route('/athlete')
 @login_required
 def athlete():
+    '''
+    this is the page for an user of type athlete, and sees its personal data
+    '''
  
     if current_user.type != "athlete":
         return "<h1>NO ACCESS</h1>"
     
+    # fetches the date and visible notes
     athlete = current_user
-    
     date = request.args.get('date', None)
-
-    #athlete = Athlete.query.get(id)
     visible_notes = [note for note in athlete.received_notes if note.visible]
 
+    # collects all the different dates the athlete has jumped
     if date == None:
-        date = AthletePerformance.query\
+        date = HawkinAthlete.query\
         .filter_by(athlete_id=athlete.colby_id)\
-        .order_by(AthletePerformance.date.desc())\
+        .order_by(HawkinAthlete.date.desc())\
         .first()
         date = date.date.strftime("%Y-%m-%d")
-
     dates_query = db.session.query(
-        AthletePerformance.date,
+        HawkinAthlete.date,
     ).filter(
-        AthletePerformance.athlete_id == athlete.colby_id
+        HawkinAthlete.athlete_id == athlete.colby_id
     ).distinct().all()
-
     # Extracting and formatting dates
     distinct_dates = [date[0].strftime("%Y-%m-%d") for date in dates_query]
 
+    # collects the average metrics for the specified day
     avg_metrics = db.session.query(
-        func.avg(AthletePerformance.braking_rfd).label('avg_braking_rfd'),
-        func.avg(AthletePerformance.jump_height).label('avg_jump_height'),
-        func.avg(AthletePerformance.mrsi).label('avg_mrsi'),
-        func.avg(AthletePerformance.peak_propulsive_force).label('avg_peak_propulsive_force')
+        func.avg(HawkinAthlete.braking_rfd).label('avg_braking_rfd'),
+        func.avg(HawkinAthlete.jump_height).label('avg_jump_height'),
+        func.avg(HawkinAthlete.mrsi).label('avg_mrsi'),
+        func.avg(HawkinAthlete.peak_propulsive_force).label('avg_peak_propulsive_force')
     ).filter(
-        AthletePerformance.athlete_id == athlete.colby_id,
-        AthletePerformance.date == date
+        HawkinAthlete.athlete_id == athlete.colby_id,
+        HawkinAthlete.date == date
     ).first()
 
-    for_avg = []
-    per = []
-    circle = []
+    per = [] # percentage equivalent using the athete max
+    circle = [] # value for the graph to reprecent the percentage 
 
     # RFD
     # m = max, d = datapoint, p = percentage, c = circle
@@ -164,7 +148,7 @@ def athlete():
     per.append(int(p))
     circle.append(int(c))
 
-
+    for_avg = [] # list for formated avergaes
     for i in avg_metrics:
         for_avg.append("{:.5g}".format(i))
     
@@ -173,10 +157,14 @@ def athlete():
 @routes.route('/team/<int:id>', methods = ['GET', 'POST'])
 @login_required
 def team(id):
+    '''
+    this is the page for an user of type coach, peak and admin, shows the average values of the metrics of all athletes in the last 5 days
+    '''
 
-    if current_user.type == "athlete":
+    if current_user.type == "athlete": # ensures that the user is not an athelte
         return "<h1>NO ACCESS</h1>"
     
+    # fetches the team object, as well as all the athletes in the team
     team = Team.query.get(id)
     team_members = [association.user for association in team.team_associations]
     athletes = [member for member in team_members if member.type == 'athlete']
@@ -185,46 +173,45 @@ def team(id):
     # Requested date from query parameters or the last jump date if not specified
     date_param = request.args.get('date', None)
 
+    # Collects all the distinct dates for the user to chose the date in the calendar
+    jump_dates_query = db.session.query(HawkinAthlete.date).filter(
+        HawkinAthlete.athlete_id.in_(colby_ids)
+    ).distinct().order_by(HawkinAthlete.date.asc())
+    distinct_dates = [result.date.strftime("%Y-%m-%d") for result in jump_dates_query.all()]
+
     if date_param:
         try:
             # If 'date' query parameter exists, parse it
             date = datetime.strptime(date_param, '%Y-%m-%d').date()
         except ValueError:
-            # Handle the exception if date format is incorrect
-            # Redirect to the same page without the 'date' parameter or handle appropriately
+            
+            # Redirect to the same page without the 'date' parameter
             return redirect(url_for('main.team', id=id))
     else:
-        # Get the last jump date from any athlete
-        last_jump_date_query = db.session.query(db.func.max(AthletePerformance.date)).filter(
-            AthletePerformance.athlete_id.in_(colby_ids)
+        # Sets the date to the last jump of any of the athltetes in the team
+        last_jump_date_query = db.session.query(db.func.max(HawkinAthlete.date)).filter(
+            HawkinAthlete.athlete_id.in_(colby_ids)
         )
         last_jump_date_result = last_jump_date_query.first()
         last_jump_date = last_jump_date_result[0] if last_jump_date_result[0] else datetime.today().date()
         date = last_jump_date
 
+    # we are going to collect the average values of the athletes of the last 5 days (this is because not everyone jump everyday jump every day)
     start_date = date - timedelta(days=5)
     end_date = date
-
-    jump_dates_query = db.session.query(AthletePerformance.date).filter(
-        AthletePerformance.athlete_id.in_(colby_ids)
-    ).distinct().order_by(AthletePerformance.date.asc())
-
-    distinct_dates = [result.date.strftime("%Y-%m-%d") for result in jump_dates_query.all()]
-
     avg_metrics = db.session.query(
-        func.avg(AthletePerformance.braking_rfd).label('avg_braking_rfd'),
-        func.avg(AthletePerformance.jump_height).label('avg_jump_height'),
-        func.avg(AthletePerformance.mrsi).label('avg_mrsi'),
-        func.avg(AthletePerformance.peak_propulsive_force).label('avg_peak_propulsive_force')
+        func.avg(HawkinAthlete.braking_rfd).label('avg_braking_rfd'),
+        func.avg(HawkinAthlete.jump_height).label('avg_jump_height'),
+        func.avg(HawkinAthlete.mrsi).label('avg_mrsi'),
+        func.avg(HawkinAthlete.peak_propulsive_force).label('avg_peak_propulsive_force')
     ).filter(
-        AthletePerformance.athlete_id.in_(colby_ids),
-        AthletePerformance.date >= start_date,
-        AthletePerformance.date <= end_date
+        HawkinAthlete.athlete_id.in_(colby_ids),
+        HawkinAthlete.date >= start_date,
+        HawkinAthlete.date <= end_date
     ).first()
 
-    for_avg = []
-    per = []
-    circle = []
+    per = [] # percentage equivalent using the athete max
+    circle = [] # value for the graph to reprecent the percentage 
 
     # RFD
     # m = max, d = datapoint, p = percentage, c = circle
@@ -259,6 +246,7 @@ def team(id):
     per.append(int(p))
     circle.append(int(c))
 
+    for_avg = [] # list for formated avergaes
     for i in avg_metrics:
         for_avg.append("{:.5g}".format(i))
 
@@ -267,44 +255,46 @@ def team(id):
 @routes.route('/athlete/<int:id>', methods = ['GET', 'POST'])
 @login_required
 def athlete_coach(id):
+    '''
+    this is the page for an user of type coach, peak, and admin, and sees the data for an athelte
+    '''
 
-    date = request.args.get('date', None)
-
-    if current_user.type == "athlete":
+    if current_user.type == "athlete": # ensure the user is not an athlete
         return "<h1>NO ACCESS</h1>"
     
+    #fetches the date, athelte and visible notes
+    date = request.args.get('date', None)
     athlete = Athlete.query.get(id)
     visible_notes = [note for note in athlete.received_notes if note.visible]
 
+    # collects all the different dates the athlete has jumped
     if date == None:
-        date = AthletePerformance.query\
+        date = HawkinAthlete.query\
         .filter_by(athlete_id=athlete.colby_id)\
-        .order_by(AthletePerformance.date.desc())\
+        .order_by(HawkinAthlete.date.desc())\
         .first()
         date = date.date.strftime("%Y-%m-%d")
-
     dates_query = db.session.query(
-        AthletePerformance.date,
+        HawkinAthlete.date,
     ).filter(
-        AthletePerformance.athlete_id == athlete.colby_id
+        HawkinAthlete.athlete_id == athlete.colby_id
     ).distinct().all()
-
     # Extracting and formatting dates
     distinct_dates = [date[0].strftime("%Y-%m-%d") for date in dates_query]
 
+    # collects the average metrics for the specified day
     avg_metrics = db.session.query(
-        func.avg(AthletePerformance.braking_rfd).label('avg_braking_rfd'),
-        func.avg(AthletePerformance.jump_height).label('avg_jump_height'),
-        func.avg(AthletePerformance.mrsi).label('avg_mrsi'),
-        func.avg(AthletePerformance.peak_propulsive_force).label('avg_peak_propulsive_force')
+        func.avg(HawkinAthlete.braking_rfd).label('avg_braking_rfd'),
+        func.avg(HawkinAthlete.jump_height).label('avg_jump_height'),
+        func.avg(HawkinAthlete.mrsi).label('avg_mrsi'),
+        func.avg(HawkinAthlete.peak_propulsive_force).label('avg_peak_propulsive_force')
     ).filter(
-        AthletePerformance.athlete_id == athlete.colby_id,
-        AthletePerformance.date == date
+        HawkinAthlete.athlete_id == athlete.colby_id,
+        HawkinAthlete.date == date
     ).first()
 
-    for_avg = []
-    per = []
-    circle = []
+    per = [] # percentage equivalent using the athete max
+    circle = [] # value for the graph to reprecent the percentage 
 
     # RFD
     # m = max, d = datapoint, p = percentage, c = circle
@@ -339,6 +329,7 @@ def athlete_coach(id):
     per.append(int(p))
     circle.append(int(c))
 
+    for_avg = [] # list for formated avergaes
     for i in avg_metrics:
         for_avg.append("{:.5g}".format(i))
     
@@ -757,7 +748,7 @@ def remove_user(id):
     if not user:
         return "<h1>User not found</h1>"
 
-    # First, remove AthletePerformance records if the user is an Athlete
+    # First, remove HawkinAthlete records if the user is an Athlete
     if hasattr(user, 'performances'):
         for performance in user.performances:
             db.session.delete(performance)
@@ -843,68 +834,3 @@ def delete_team(team_id):
     db.session.commit()
 
     return jsonify(success=True), 200
-
-# initialize DB with API
-@routes.route('/init_team/<int:team_id>')
-@login_required
-def init_team(team_id):
-
-    team = Team.query.get(team_id)
-    team_members = [association.user for association in team.team_associations]
-    athletes = [member for member in team_members if member.type == 'athlete']
-    api_ids = [athlete.hawkin_api_id for athlete in athletes]
-    # Current end date
-    end_date = datetime.today().date()
-    start_date = datetime(end_date.year, 8, 1).date()
-
-    # Check if the start date is later in the year than the end date
-    if start_date > end_date:
-        # If so, set the start date to August 1st of the previous year
-        start_date = datetime(end_date.year - 1, 8, 1).date()
-
-
-    for athl in api_ids:
-
-        athlete = Athlete.query.filter_by(hawkin_api_id=athl).first()
-        # Collect the data from the API
-        data = get_athlete_data(athl)
-        data = data['data']
-
-        # parse the data from the API
-        for jump in data:
-            # Collects the data from the API
-            try:
-                j = AthletePerformance(
-                    date=datetime.utcfromtimestamp(jump['timestamp']),
-                    jump_height=jump['Jump Height(m)'],
-                    braking_rfd=jump['Braking RFD(N/s)'],
-                    mrsi=jump['mRSI'],
-                    peak_propulsive_force=jump['Peak Propulsive Force(N)'],
-                    athlete_id=athlete.colby_id  # Use the athlete's ID
-                )
-                db.session.add(j)
-            except:
-                pass
-
-            try:
-                db.session.commit()
-                flash('Athlete performance data added successfully.', 'success')
-            except SQLAlchemyError as e:
-                db.session.rollback()
-                flash('Error adding performance data.', 'error')
-
-        # Sets the max for the athletes
-        set_max(athlete.colby_id, start_date, end_date)  
-
-    set_max_team(team_id, start_date, end_date) 
-
-    return redirect(url_for('main.home')) 
-
-# test API routes
-@routes.route('/test_api')
-@login_required
-def test_api():
-
-    update_db()
-
-    return redirect(url_for('main.home'))

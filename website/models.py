@@ -1,3 +1,7 @@
+'''
+This page contains all the models for the database and app to work
+'''
+
 # Imports
 from . import db
 from datetime import datetime
@@ -68,7 +72,7 @@ class Athlete(User):
         'polymorphic_identity':'athlete',
     }
 
-class AthletePerformance(db.Model):
+class HawkinAthlete(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
 
@@ -84,7 +88,7 @@ class AthletePerformance(db.Model):
     athlete = db.relationship('Athlete', backref=db.backref('performances', lazy=True))
 
     def __repr__(self):
-        return f"<AthletePerformance {self.id}, Date: {self.date}, Athlete ID: {self.athlete_id}>"
+        return f"<HawkinAthlete {self.id}, Date: {self.date}, Athlete ID: {self.athlete_id}>"
 
 class Team(db.Model):
     __tablename__ = 'teams'
@@ -109,7 +113,7 @@ class TeamUserAssociation(db.Model):
     user = db.relationship(User, back_populates="team_associations")
     team = db.relationship(Team, back_populates="team_associations")
 
-class TeamPerformance(db.Model):
+class HawkinTeam(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     avg_jump_height = db.Column(db.Float, nullable=False)  # Average jump height
@@ -124,7 +128,7 @@ class TeamPerformance(db.Model):
     team = db.relationship('Team', backref=db.backref('performances', lazy=True))
 
     def __repr__(self):
-        return f"<TeamPerformance {self.id}, Date: {self.date}, Team ID: {self.team_id}>"
+        return f"<HawkinTeam {self.id}, Date: {self.date}, Team ID: {self.team_id}>"
 
 class Note(db.Model):
     __tablename__ = 'notes'

@@ -1,8 +1,6 @@
-"""
-Jonathan Sosa 
-helper_functions.py
-may-jun 2023
-"""
+'''
+This page contains helper functions used in different parts of the app
+'''
 
 # functions on the file (you can look these up and it will take you there)
 ## create_user --> creates an user if it doesn't exist
@@ -17,8 +15,6 @@ import pandas as pd
 import os
 from . import db
 from .email import *
-
-#functions
 from werkzeug.security import generate_password_hash
 
 def create_user(colby_id, first_name, last_name, email, gender, class_year, user_type, hawkin_api_id=None, team_name=None):
@@ -73,14 +69,9 @@ def create_user(colby_id, first_name, last_name, email, gender, class_year, user
         else:
             print("Invalid user type")  # Debugging
             return False, [colby_id, 'wrong type of user']
-
-        token = generate_password_reset_token(email)
-        
-        # Generate URL for setting password
-        reset_url = url_for('auth.reset_password', token=token, _external=True)
         
         # Send email with password reset link
-        send_email(email, 'Set Your Password', 'mail/password_reset', reset_url=reset_url)
+        send_password_reset_email(email)
 
         # Add user to the database
         db.session.add(new_user)
