@@ -834,3 +834,43 @@ def delete_team(team_id):
     db.session.commit()
 
     return jsonify(success=True), 200
+
+@routes.route('/merge_db')
+@login_required
+def merge_db():
+    try:
+        # Step 2: Fetch all AthletePerformance records
+        athlete_performances = AthletePerformance.query.all()
+
+        # Step 3: Transform and Insert Data into HawkinAthlete
+        for ap in athlete_performances:
+            new_record = HawkinAthlete(
+                athlete_id=ap.athlete_id,
+                date=ap.date,
+                braking_rfd=ap.braking_rfd,
+                jump_height=ap.jump_height,
+                mrsi=ap.mrsi,
+                peak_propulsive_force=ap.peak_propulsive_force,
+                # Ensure all relevant fields are mapped
+            )
+            db.session.add(new_record)
+
+        # Step 4: Commit the transaction
+        db.session.commit()
+        print("Data merge completed successfully.")
+    except Exception as e:
+        db.session.rollback()  # Rollback in case of error
+        print(f"An error occurred: {e}")
+
+@routes.route('/athlete_performance/<int:athlete_id>')
+@login_required
+def athlete_performance(athlete_id):
+    performances = HawkinAthlete.query.filter_by(athlete_id=athlete_id).order_by(HawkinAthlete.date.asc()).all()
+    
+    # Prepare data for graph
+    data = [{
+        "date": performance.date.strftime("%Y-%m-%d"),
+        "jump_height": performance.jump_height
+    } for performance in performances]
+    
+    return render_template('athlete_performance.html', data=data)

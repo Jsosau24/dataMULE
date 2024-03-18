@@ -1,6 +1,40 @@
 {% extends 'base.html' %}
 
 {% block title %}JH Metric{% endblock %}
+<script>
+    var performanceData = {{ data | tojson }};
+    console.log(performanceData);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<canvas id="athletePerformanceChart" width="400" height="400"></canvas>
+
+<script>
+    var ctx = document.getElementById('athletePerformanceChart').getContext('2d');
+    var athletePerformanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: performanceData.map(performance => performance.date),
+            datasets: [{
+                label: 'Jump Height Over Time',
+                data: performanceData.map(performance => performance.jump_height),
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+</script>
+
+
 
 {% block content %}
 
