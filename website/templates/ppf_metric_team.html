@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Team Power Metric{% endblock %}
+
+{% block content %}
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <!-- SVG for menu button -->
+    </div>
+    <h1>{{ team.name }}'s Power</h1>
+</div>
+
+<div style="width: 100%; height: 85%;">
+    <canvas id="teamPerformanceChart"></canvas>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var performanceData = {{ data | tojson | safe }};
+        var ctx = document.getElementById('teamPerformanceChart').getContext('2d');
+        var teamPerformanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: performanceData.map(dataPoint => dataPoint.date),
+                datasets: [{
+                    label: 'Weekly Average Power',
+                    data: performanceData.map(dataPoint => dataPoint.power),
+                    fill: false,
+                    borderColor: 'rgb(255, 206, 86)',
+                    tension: 0.1
+                }]
+            }
+        });
+    });
+    </script>
+    
+{% endblock %}

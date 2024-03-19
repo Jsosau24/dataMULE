@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}JH Metric{% endblock %}
+{% block title %}Fatigue Metric{% endblock %}
 
 {% block content %}
 <div class="top">
@@ -9,7 +9,7 @@
             <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
         </svg>
     </div>
-    <h1>{{ athlete.first_name }} {{ athlete.last_name }}'s Jump Height</h1>
+    <h1>{{ athlete.first_name }} {{ athlete.last_name }}'s Fatigue</h1>
 </div>
 
 <div style="width: 98%; height: 85%;">
@@ -20,11 +20,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     var performanceData = {{ data | tojson | safe }};
     
-    // Calculate the minimum jump height from your data
-    var minJumpHeight = Math.min(...performanceData.map(performance => performance.jump_height));
+    // Calculate the minimum fatigue from your data
+    var minFatigue = Math.min(...performanceData.map(performance => performance.fatigue));
     
     // Reduce the minimum value by 5%
-    var adjustedMin = minJumpHeight - (minJumpHeight * 0.05);
+    var adjustedMin = minFatigue - (minFatigue * 0.05);
 
     var ctx = document.getElementById('athletePerformanceChart').getContext('2d');
     var athletePerformanceChart = new Chart(ctx, {
@@ -32,15 +32,14 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: performanceData.map(performance => performance.date),
             datasets: [{
-                label: 'Jump Height Over Time',
-                data: performanceData.map(performance => performance.jump_height),
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
+                label: 'Fatigue Over Time',
+                data: performanceData.map(performance => performance.fatigue),
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
             }]
         }
     });
 });
-
 </script>
 {% endblock %}

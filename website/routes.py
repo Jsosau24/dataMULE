@@ -835,42 +835,294 @@ def delete_team(team_id):
 
     return jsonify(success=True), 200
 
-@routes.route('/merge_db')
+@routes.route('/jh/<int:athlete_id>')
 @login_required
-def merge_db():
-    try:
-        # Step 2: Fetch all AthletePerformance records
-        athlete_performances = AthletePerformance.query.all()
+def jh(athlete_id):
 
-        # Step 3: Transform and Insert Data into HawkinAthlete
-        for ap in athlete_performances:
-            new_record = HawkinAthlete(
-                athlete_id=ap.athlete_id,
-                date=ap.date,
-                braking_rfd=ap.braking_rfd,
-                jump_height=ap.jump_height,
-                mrsi=ap.mrsi,
-                peak_propulsive_force=ap.peak_propulsive_force,
-                # Ensure all relevant fields are mapped
-            )
-            db.session.add(new_record)
+    athlete = User.query.get(athlete_id)
 
-        # Step 4: Commit the transaction
-        db.session.commit()
-        print("Data merge completed successfully.")
-    except Exception as e:
-        db.session.rollback()  # Rollback in case of error
-        print(f"An error occurred: {e}")
+    # Determine the current academic year start and end dates
+    today = datetime.today()
+    current_year = today.year
+    academic_year_start = datetime(current_year if today.month >= 8 else current_year - 1, 8, 1)
+    academic_year_end = today  # Up to the current date
 
-@routes.route('/athlete_performance/<int:athlete_id>')
+    # Query to fetch jump_height data from the start of the academic year to today
+    performances = db.session.query(
+        HawkinAthlete.date.label('date'),
+        func.avg(HawkinAthlete.jump_height).label('avg_jump_height')
+    ).filter(
+        HawkinAthlete.athlete_id == athlete.colby_id,
+        HawkinAthlete.date >= academic_year_start,
+        HawkinAthlete.date <= academic_year_end
+    ).group_by(
+        HawkinAthlete.date
+    ).order_by(
+        HawkinAthlete.date.asc()
+    ).all()
+
+    # Prepare data for the graph
+    data = [
+        {"date": performance.date.strftime("%Y-%m-%d"), "jump_height": performance.avg_jump_height}
+        for performance in performances
+    ]
+    
+    return render_template('jh_metric.html', data=data, user=current_user, athlete=athlete)
+
+@routes.route('/team/jh/<int:team_id>')
 @login_required
-def athlete_performance(athlete_id):
-    performances = HawkinAthlete.query.filter_by(athlete_id=athlete_id).order_by(HawkinAthlete.date.asc()).all()
-    
-    # Prepare data for graph
-    data = [{
-        "date": performance.date.strftime("%Y-%m-%d"),
-        "jump_height": performance.jump_height
-    } for performance in performances]
-    
-    return render_template('athlete_performance.html', data=data)
+def jh_team(team_id):
+    team = Team.query.get(team_id)
+    if not team:
+        # Handle the case where the team does not exist
+        return "Team not found", 404
+
+    team_members = [association.user for association in team.team_associations]
+    athletes = [member for member in team_members if member.type == 'athlete']
+    colby_ids = [athlete.colby_id for athlete in athletes]
+
+    today = datetime.today()
+    academic_year_start = datetime(today.year if today.month >= 8 else today.year - 1, 8, 1)
+
+    # Assuming HawkinAthlete has a date and jump_height column
+    # Perform the query
+    weekly_avg_jump_heights = db.session.query(
+        func.strftime('%Y-%W', HawkinAthlete.date).label('week'),
+        func.avg(HawkinAthlete.jump_height).label('avg_jump_height')
+    ).filter(
+        HawkinAthlete.athlete_id.in_(colby_ids),
+        HawkinAthlete.date >= academic_year_start,
+        HawkinAthlete.date <= today
+    ).group_by(
+        'week'
+    ).order_by(
+        'week'
+    ).all()
+
+    # Prepare data for template, converting week number to the last day of that week
+    data = []
+    for result in weekly_avg_jump_heights:
+        year, week = result.week.split('-')
+        # Calculate the first day of the week
+        first_day_of_week = datetime.strptime(f'{year}-W{int(week)}-1', "%Y-W%W-%w")
+        # Calculate the last day of the week (Sunday)
+        last_day_of_week = first_day_of_week + timedelta(days=6)
+        last_day_of_week_str = last_day_of_week.strftime('%Y-%m-%d')
+        
+        data.append({'date': last_day_of_week_str, 'avg_jump_height': float(result.avg_jump_height)})
+
+    return render_template('jh_metric_team.html', data=data, team=team, user=current_user)
+ 
+@routes.route('/rRFD/<int:athlete_id>')
+@login_required
+def rRFD(athlete_id):
+    athlete = User.query.get(athlete_id)
+
+    # Determine the current academic year start and end dates
+    today = datetime.today()
+    current_year = today.year
+    academic_year_start = datetime(current_year if today.month >= 8 else current_year - 1, 8, 1)
+    academic_year_end = today  # Up to the current date
+
+    # Query to fetch braking_rfd data from the start of the academic year to today
+    performances = db.session.query(
+        HawkinAthlete.date.label('date'),
+        func.avg(HawkinAthlete.braking_rfd).label('fatigue')
+    ).filter(
+        HawkinAthlete.athlete_id == athlete.colby_id,
+        HawkinAthlete.date >= academic_year_start,
+        HawkinAthlete.date <= academic_year_end
+    ).group_by(
+        HawkinAthlete.date
+    ).order_by(
+        HawkinAthlete.date.asc()
+    ).all()
+
+    # Prepare data for the graph
+    data = [
+        {"date": performance.date.strftime("%Y-%m-%d"), "fatigue": performance.fatigue}
+        for performance in performances
+    ]
+
+    return render_template('rfd_metric.html', data=data, user=current_user, athlete=athlete)
+
+@routes.route('/team/rRFD/<int:team_id>')
+@login_required
+def rRFD_team(team_id):
+    team = Team.query.get(team_id)
+    if not team:
+        return "Team not found", 404
+
+    team_members = [association.user for association in team.team_associations]
+    athletes = [member for member in team_members if member.type == 'athlete']
+    colby_ids = [athlete.colby_id for athlete in athletes]
+
+    today = datetime.today()
+    academic_year_start = datetime(today.year if today.month >= 8 else today.year - 1, 8, 1)
+
+    weekly_avg_fatigue = db.session.query(
+        func.strftime('%Y-%W', HawkinAthlete.date).label('week'),
+        func.avg(HawkinAthlete.braking_rfd).label('fatigue')
+    ).filter(
+        HawkinAthlete.athlete_id.in_(colby_ids),
+        HawkinAthlete.date >= academic_year_start,
+        HawkinAthlete.date <= today
+    ).group_by(
+        'week'
+    ).order_by(
+        'week'
+    ).all()
+
+    data = []
+    for result in weekly_avg_fatigue:
+        year, week = result.week.split('-')
+        first_day_of_week = datetime.strptime(f'{year}-W{int(week)}-1', "%Y-W%W-%w")
+        last_day_of_week = first_day_of_week + timedelta(days=6)
+        last_day_of_week_str = last_day_of_week.strftime('%Y-%m-%d')
+        
+        data.append({'date': last_day_of_week_str, 'fatigue': result.fatigue})
+
+    return render_template('rRFD_metric_team.html', data=data, team=team, user=current_user)
+
+@routes.route('/mrsi/<int:athlete_id>')
+@login_required
+def mrsi(athlete_id):
+    athlete = User.query.get(athlete_id)
+
+    # Determine the current academic year start and end dates
+    today = datetime.today()
+    current_year = today.year
+    academic_year_start = datetime(current_year if today.month >= 8 else current_year - 1, 8, 1)
+    academic_year_end = today  # Up to the current date
+
+    # Query to fetch mrsi data from the start of the academic year to today
+    performances = db.session.query(
+        HawkinAthlete.date.label('date'),
+        func.avg(HawkinAthlete.mrsi).label('performance')
+    ).filter(
+        HawkinAthlete.athlete_id == athlete.colby_id,
+        HawkinAthlete.date >= academic_year_start,
+        HawkinAthlete.date <= academic_year_end
+    ).group_by(
+        HawkinAthlete.date
+    ).order_by(
+        HawkinAthlete.date.asc()
+    ).all()
+
+    # Prepare data for the graph
+    data = [
+        {"date": performance.date.strftime("%Y-%m-%d"), "performance": performance.performance}
+        for performance in performances
+    ]
+
+    return render_template('mrsi_metric.html', data=data, user=current_user, athlete=athlete)
+
+@routes.route('/team/mrsi/<int:team_id>')
+@login_required
+def mrsi_team(team_id):
+    team = Team.query.get(team_id)
+    if not team:
+        return "Team not found", 404
+
+    team_members = [association.user for association in team.team_associations if association.user.type == 'athlete']
+    colby_ids = [athlete.colby_id for athlete in team_members]
+
+    today = datetime.today()
+    academic_year_start = datetime(today.year if today.month >= 8 else today.year - 1, 8, 1)
+
+    weekly_avg_performance = db.session.query(
+        func.strftime('%Y-%W', HawkinAthlete.date).label('week'),
+        func.avg(HawkinAthlete.mrsi).label('performance')
+    ).filter(
+        HawkinAthlete.athlete_id.in_(colby_ids),
+        HawkinAthlete.date >= academic_year_start,
+        HawkinAthlete.date <= today
+    ).group_by(
+        'week'
+    ).order_by(
+        'week'
+    ).all()
+
+    data = []
+    for result in weekly_avg_performance:
+        year, week = result.week.split('-')
+        first_day_of_week = datetime.strptime(f'{year}-W{int(week)}-1', "%Y-W%W-%w")
+        last_day_of_week = first_day_of_week + timedelta(days=6)
+        last_day_of_week_str = last_day_of_week.strftime('%Y-%m-%d')
+        
+        data.append({'date': last_day_of_week_str, 'performance': float(result.performance)})
+
+    return render_template('mrsi_metric_team.html', data=data, team=team, user=current_user)
+
+@routes.route('/ppf/<int:athlete_id>')
+@login_required
+def ppf(athlete_id):
+    athlete = User.query.get(athlete_id)
+
+    # Determine the current academic year start and end dates
+    today = datetime.today()
+    current_year = today.year
+    academic_year_start = datetime(current_year if today.month >= 8 else current_year - 1, 8, 1)
+    academic_year_end = today  # Up to the current date
+
+    # Query to fetch mrsi data from the start of the academic year to today
+    performances = db.session.query(
+        HawkinAthlete.date.label('date'),
+        func.avg(HawkinAthlete.peak_propulsive_force).label('power')
+    ).filter(
+        HawkinAthlete.athlete_id == athlete.colby_id,
+        HawkinAthlete.date >= academic_year_start,
+        HawkinAthlete.date <= academic_year_end
+    ).group_by(
+        HawkinAthlete.date
+    ).order_by(
+        HawkinAthlete.date.asc()
+    ).all()
+
+    # Prepare data for the graph
+    data = [
+        {"date": performance.date.strftime("%Y-%m-%d"), "performance": performance.power}
+        for performance in performances
+    ]
+
+
+    return render_template('ppf_metric.html', data=data, user=current_user, athlete=athlete)
+
+@routes.route('/team/ppf/<int:team_id>')
+@login_required
+def ppf_team(team_id):
+    team = Team.query.get(team_id)
+    if not team:
+        return "Team not found", 404
+
+    team_members = [association.user for association in team.team_associations if association.user.type == 'athlete']
+    colby_ids = [athlete.colby_id for athlete in team_members]
+
+    today = datetime.today()
+    academic_year_start = datetime(today.year if today.month >= 8 else today.year - 1, 8, 1)
+
+    weekly_avg_power = db.session.query(
+        func.strftime('%Y-%W', HawkinAthlete.date).label('week'),
+        func.avg(HawkinAthlete.peak_propulsive_force).label('power')
+    ).filter(
+        HawkinAthlete.athlete_id.in_(colby_ids),
+        HawkinAthlete.date >= academic_year_start,
+        HawkinAthlete.date <= today
+    ).group_by(
+        'week'
+    ).order_by(
+        'week'
+    ).all()
+
+    data = []
+    for result in weekly_avg_power:
+        year, week = result.week.split('-')
+        first_day_of_week = datetime.strptime(f'{year}-W{int(week)}-1', "%Y-W%W-%w")
+        last_day_of_week = first_day_of_week + timedelta(days=6)
+        last_day_of_week_str = last_day_of_week.strftime('%Y-%m-%d')
+        
+        data.append({'date': last_day_of_week_str, 'power': float(result.power)})
+
+    return render_template('ppf_metric_team.html', data=data, team=team, user=current_user)
+
+

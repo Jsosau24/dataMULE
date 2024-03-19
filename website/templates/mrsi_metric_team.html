@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Team performance Metric{% endblock %}
+
+{% block content %}
+<div class="top">
+    <div class="menu" id="menu-btn" style="width: 2rem; height: 2rem;">
+        <!-- SVG for menu button -->
+    </div>
+    <h1>{{ team.name }}'s Performance</h1>
+</div>
+
+<div style="width: 100%; height: 85%;">
+    <canvas id="teamPerformanceChart"></canvas>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var performanceData = {{ data | tojson | safe }};
+        var ctx = document.getElementById('teamPerformanceChart').getContext('2d');
+        var teamPerformanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: performanceData.map(dataPoint => dataPoint.date),
+                datasets: [{
+                    label: 'Weekly Average mRSI',
+                    data: performanceData.map(dataPoint => dataPoint.performance),
+                    fill: false,
+                    borderColor: 'rgb(153, 102, 255)',
+                    tension: 0.1
+                }]
+            }
+        });
+    });
+</script>
+{% endblock %}
